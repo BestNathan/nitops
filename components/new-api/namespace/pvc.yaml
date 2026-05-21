@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: shared-nfs
+  name: new-api-nfs
   namespace: new-api
 spec:
   accessModes:
@@ -9,4 +9,4 @@ spec:
   resources:
     requests:
       storage: 100Gi
-  volumeName: shared-nfs
+  volumeName: new-api-nfs

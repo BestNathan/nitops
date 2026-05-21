@@ -35,4 +35,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: shared-nfs
+            claimName: new-api-nfs

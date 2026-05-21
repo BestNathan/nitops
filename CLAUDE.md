@@ -34,7 +34,7 @@ apps-mcp/                      # MCP services — ArgoCD Application resources
 
 components/                    # Kubernetes manifests
 ├── cluster/                   # Cluster-scoped resources
-│   └── shared-nfs-pv.yaml     # Shared NFS PersistentVolume
+│   └── shared-nfs-pv.yaml     # Shared NFS PersistentVolume for observability
 ├── observability/             # observability namespace resources
 │   ├── namespace/
 │   │   ├── namespace.yaml     # Namespace definition
@@ -46,7 +46,8 @@ components/                    # Kubernetes manifests
 ├── new-api/                   # new-api namespace resources
 │   ├── namespace/
 │   │   ├── namespace.yaml     # Namespace definition
-│   │   └── pvc.yaml           # PVC binding to shared NFS
+│   │   ├── pv.yaml            # Dedicated NFS PersistentVolume
+│   │   └── pvc.yaml           # PVC binding to the dedicated PV
 │   ├── new-api/
 │   ├── postgres/
 │   └── redis/
@@ -67,9 +68,9 @@ The `cluster.yaml` app deploys cluster-scoped resources (no namespace). The `obs
 - **One resource per file** — DO NOT merge different resources into one YAML file
 - **NFS storage:** server=`192.168.2.105`, mount=`/mnt/share/k8s`
 - **Storage model:**
-  - PersistentVolumes (PV) are cluster-scoped resources defined under `components/cluster/`
-  - PersistentVolumeClaims (PVC) are namespace-scoped resources and should be declared by each namespace that needs storage
-  - Workloads choose their own `subPath` values in their Deployments to isolate data inside a shared PVC
+  - PersistentVolumes (PV) are cluster-scoped Kubernetes resources, but repository ownership can be either shared (`components/cluster/`) or app-local (`components/<app>/namespace/`)
+  - PersistentVolumeClaims (PVC) are namespace-scoped resources and should be declared alongside the workloads that use them
+  - Workloads choose their own `subPath` values in their Deployments to isolate data inside a shared PVC when multiple components in the same namespace reuse one claim
 - Loki uses MinIO S3 (`minio.minio.svc:9000`) for object storage
 - ArgoCD apps use `syncPolicy.automated` with `prune: true` and `selfHeal: true`
 - **Ingress convention** (Higress):
@@ -105,11 +106,16 @@ argocd app rollback <app-name>
 
 ## Storage Model
 
-The repository uses a shared NFS PersistentVolume (`shared-nfs`) as a cluster-scoped storage resource. Namespaces that need shared NFS storage declare their own PVCs against that PV, then each workload uses `subPath` in its Deployment to isolate its data.
+PersistentVolumes are cluster-scoped Kubernetes resources, but this repository stores them by ownership boundary rather than forcing every PV into one directory.
+
+- Shared infrastructure PVs can live under `components/cluster/`
+- App-dedicated PVs can live with the owning namespace resources under `components/<app>/namespace/`
+- PVCs are always namespace-scoped and should be declared in the same namespace as the workloads that use them
+- When multiple workloads in one namespace share a PVC, each workload should use its own `subPath` to isolate data
 
 ### observability
 
-The `observability` namespace binds its own PVC to `shared-nfs` and uses per-component `subPath` values:
+The `observability` namespace uses the shared cluster-level PV `shared-nfs` and binds it through `components/observability/namespace/pvc.yaml`. Workloads in that namespace isolate their data with per-component `subPath` values:
 - Prometheus → `subPath: prometheus`
 - Loki → `subPath: loki`
 - Grafana → `subPath: grafana`
@@ -117,9 +123,9 @@ The `observability` namespace binds its own PVC to `shared-nfs` and uses per-com
 
 ### new-api
 
-The `new-api` namespace binds its own PVC to `shared-nfs` and uses only `new-api/`-prefixed `subPath` values:
+The `new-api` namespace owns its own NFS PV/PVC pair under `components/new-api/namespace/` and uses only `new-api/`-prefixed `subPath` values:
 - new-api data → `subPath: new-api/data`
 - new-api logs → `subPath: new-api/logs`
 - PostgreSQL data → `subPath: new-api/postgres`
 
-MinIO is separate from this shared-PV pattern and uses its own dedicated PV/PVC resources under `components/minio/`.
+MinIO is separate from both patterns and uses its own dedicated PV/PVC resources under `components/minio/`.
