@@ -25,6 +25,7 @@ apps/                          # ArgoCD Application resources
 ├── minio.yaml                 # ArgoCD app for MinIO
 ├── redis.yaml                 # ArgoCD app for Redis
 ├── jaeger.yaml                # ArgoCD app for Jaeger
+├── new-api.yaml               # ArgoCD app for new-api stack
 └── mcp.yaml                   # ArgoCD sub-app-of-apps → apps-mcp/ (directory recurse)
 
 apps-mcp/                      # MCP services — ArgoCD Application resources
@@ -33,18 +34,25 @@ apps-mcp/                      # MCP services — ArgoCD Application resources
 
 components/                    # Kubernetes manifests
 ├── cluster/                   # Cluster-scoped resources
-│   └── shared-nfs-pv.yaml     # NFS PersistentVolume
+│   └── shared-nfs-pv.yaml     # Shared NFS PersistentVolume
 ├── observability/             # observability namespace resources
 │   ├── namespace/
 │   │   ├── namespace.yaml     # Namespace definition
 │   │   └── pvc.yaml           # PVC binding to shared NFS
-│   ├── prometheus/            # SA, RBAC, ConfigMap, Deployment, Service
-│   ├── loki/                  # ConfigMap, Deployment, Service
-│   ├── grafana/               # Deployment, Service
-│   └── jaeger/                # Deployment, Service
-├── minio/                     # Namespace, PV, PVC, Deployment, Service, Ingress
-├── redis/                     # Namespace, Deployment, Service
-└── mcp/                       # MCP service manifests
+│   ├── prometheus/
+│   ├── loki/
+│   ├── grafana/
+│   └── jaeger/
+├── new-api/                   # new-api namespace resources
+│   ├── namespace/
+│   │   ├── namespace.yaml     # Namespace definition
+│   │   └── pvc.yaml           # PVC binding to shared NFS
+│   ├── new-api/
+│   ├── postgres/
+│   └── redis/
+├── minio/
+├── redis/
+└── mcp/
     └── docs-rs-mcp/
         ├── deployment.yaml
         └── service.yaml
@@ -58,7 +66,10 @@ The `cluster.yaml` app deploys cluster-scoped resources (no namespace). The `obs
 
 - **One resource per file** — DO NOT merge different resources into one YAML file
 - **NFS storage:** server=`192.168.2.105`, mount=`/mnt/share/k8s`
-- All components share a single NFS-backed PVC (`shared-nfs`) with `subPath` isolation
+- **Storage model:**
+  - PersistentVolumes (PV) are cluster-scoped resources defined under `components/cluster/`
+  - PersistentVolumeClaims (PVC) are namespace-scoped resources and should be declared by each namespace that needs storage
+  - Workloads choose their own `subPath` values in their Deployments to isolate data inside a shared PVC
 - Loki uses MinIO S3 (`minio.minio.svc:9000`) for object storage
 - ArgoCD apps use `syncPolicy.automated` with `prune: true` and `selfHeal: true`
 - **Ingress convention** (Higress):
@@ -94,10 +105,21 @@ argocd app rollback <app-name>
 
 ## Storage Model
 
-All observability components use a shared NFS PersistentVolume (`shared-nfs`, 100Gi) with subPath isolation:
+The repository uses a shared NFS PersistentVolume (`shared-nfs`) as a cluster-scoped storage resource. Namespaces that need shared NFS storage declare their own PVCs against that PV, then each workload uses `subPath` in its Deployment to isolate its data.
+
+### observability
+
+The `observability` namespace binds its own PVC to `shared-nfs` and uses per-component `subPath` values:
 - Prometheus → `subPath: prometheus`
 - Loki → `subPath: loki`
 - Grafana → `subPath: grafana`
 - Jaeger → `subPath: jaeger`
 
-The PV is defined in `components/cluster/shared-nfs-pv.yaml`, the PVC in `components/observability/namespace/pvc.yaml`. Loki additionally stores data in MinIO S3.
+### new-api
+
+The `new-api` namespace binds its own PVC to `shared-nfs` and uses only `new-api/`-prefixed `subPath` values:
+- new-api data → `subPath: new-api/data`
+- new-api logs → `subPath: new-api/logs`
+- PostgreSQL data → `subPath: new-api/postgres`
+
+MinIO is separate from this shared-PV pattern and uses its own dedicated PV/PVC resources under `components/minio/`.

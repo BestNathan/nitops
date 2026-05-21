@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: new-api
+  namespace: new-api
+  labels:
+    app: new-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: new-api
+  template:
+    metadata:
+      labels:
+        app: new-api
+    spec:
+      containers:
+        - name: new-api
+          image: calciumion/new-api:latest
+          args:
+            - --log-dir
+            - /app/logs
+          env:
+            - name: SQL_DSN
+              value: postgresql://root:123456@postgres:5432/new-api
+            - name: REDIS_CONN_STRING
+              value: redis://:123456@redis:6379
+            - name: TZ
+              value: Asia/Shanghai
+            - name: ERROR_LOG_ENABLED
+              value: "true"
+            - name: BATCH_UPDATE_ENABLED
+              value: "true"
+            - name: NODE_NAME
+              value: new-api-node-1
+          ports:
+            - containerPort: 3000
+              name: http
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              subPath: new-api/data
+            - name: data
+              mountPath: /app/logs
+              subPath: new-api/logs
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: shared-nfs

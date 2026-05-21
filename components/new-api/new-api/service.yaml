@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: new-api
+  namespace: new-api
+  labels:
+    app: new-api
+spec:
+  type: ClusterIP
+  selector:
+    app: new-api
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http

@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: new-api
+  namespace: argocd
+  labels:
+    app: new-api
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/BestNathan/nitops.git
+    targetRevision: main
+    path: components/new-api
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: new-api
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
