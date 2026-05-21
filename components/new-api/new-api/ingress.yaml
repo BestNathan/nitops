@@ -5,11 +5,21 @@ metadata:
   namespace: new-api
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    higress.io/domain: "new-api.nhome.local"
+    higress.io/domain: "new-api.nhome.local,newapi.bestnathan.top"
 spec:
   ingressClassName: higress
   rules:
     - host: new-api.nhome.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: new-api
+                port:
+                  number: 3000
+    - host: newapi.bestnathan.top
       http:
         paths:
           - path: /
