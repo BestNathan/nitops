@@ -90,7 +90,7 @@ Only the Postgres password is stored as a Secret. Non-sensitive values (user, db
 | Namespace | `coder` |
 | Labels | `app: coder-postgres` |
 | Replicas | 1 |
-| Image | `postgres:17` |
+| Image | `postgres:15` (changed from 17 — Docker Hub unreachable on ARM node, 15 is already cached) |
 | Port | 5432 |
 | POSTGRES_USER | `coder` (plain env var) |
 | POSTGRES_DB | `coder` (plain env var) |
