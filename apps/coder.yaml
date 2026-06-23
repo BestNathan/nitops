@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: coder
+  namespace: argocd
+  labels:
+    app: coder
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/BestNathan/nitops.git
+    targetRevision: main
+    path: components/coder
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: coder
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
