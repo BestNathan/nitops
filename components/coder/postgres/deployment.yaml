@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: coder
+  labels:
+    app: coder-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coder-postgres
+  template:
+    metadata:
+      labels:
+        app: coder-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17
+          env:
+            - name: POSTGRES_USER
+              value: "coder"
+            - name: POSTGRES_DB
+              value: "coder"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coder-secret
+                  key: postgres-password
+          ports:
+            - containerPort: 5432
+              name: postgres
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - coder
+                - -d
+                - coder
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - coder
+                - -d
+                - coder
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+              subPath: coder/postgres
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: coder-nfs
