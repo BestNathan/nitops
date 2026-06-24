@@ -90,12 +90,12 @@ Only the Postgres password is stored as a Secret. Non-sensitive values (user, db
 | Namespace | `coder` |
 | Labels | `app: coder-postgres` |
 | Replicas | 1 |
-| Image | `postgres:15` (changed from 17 — Docker Hub unreachable on ARM node, 15 is already cached) |
+| Image | `postgres:17` |
 | Port | 5432 |
 | POSTGRES_USER | `coder` (plain env var) |
 | POSTGRES_DB | `coder` (plain env var) |
 | POSTGRES_PASSWORD | From `secretKeyRef: coder-secret.postgres-password` |
-| Volume | `coder-nfs` PVC, `subPath: coder/postgres`, mount `/var/lib/postgresql/data` |
+| Volume | `coder-nfs` PVC, `subPath: coder/postgres17`, mount `/var/lib/postgresql/data` |
 | Liveness probe | `pg_isready -U coder -d coder`, initialDelay=10s, period=10s |
 | Readiness probe | `pg_isready -U coder -d coder`, initialDelay=5s, period=5s |
 
