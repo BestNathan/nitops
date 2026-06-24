@@ -17,14 +17,15 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       initContainers:
+        # Stage 1: Ensure config directory structure and default config files
         - name: init-config
           image: busybox
           command:
             - sh
             - -c
             - |
-              # Ensure directory structure exists on NFS
               mkdir -p /mnt/nfs/slb/nginx-conf/conf.d
+              mkdir -p /mnt/nfs/slb/nginx-conf/certs
 
               # Create default nginx.conf if not present
               if [ ! -f /mnt/nfs/slb/nginx-conf/nginx.conf ]; then
@@ -40,7 +41,7 @@ spec:
                 echo "Created default nginx.conf"
               fi
 
-              # Create default site config if not present
+              # Create default HTTP site config if not present
               if [ ! -f /mnt/nfs/slb/nginx-conf/conf.d/vol.bestnathan.top.conf ]; then
                 cat > /mnt/nfs/slb/nginx-conf/conf.d/vol.bestnathan.top.conf << 'SITEEOF'
               server {
@@ -63,18 +64,72 @@ spec:
                 echo "Created default vol.bestnathan.top.conf"
               fi
 
-              # Fix permissions
+              # Create default SSL site config if not present
+              if [ ! -f /mnt/nfs/slb/nginx-conf/conf.d/ssl-default.conf ]; then
+                cat > /mnt/nfs/slb/nginx-conf/conf.d/ssl-default.conf << 'SSLEOF'
+              server {
+                listen 443 ssl;
+                server_name *.vol.bestnathan.top;
+
+                ssl_certificate     /etc/nginx/certs/default.crt;
+                ssl_certificate_key /etc/nginx/certs/default.key;
+                ssl_protocols       TLSv1.2 TLSv1.3;
+                ssl_ciphers         HIGH:!aNULL:!MD5;
+
+                location / {
+                  proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto https;
+
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                }
+              }
+              SSLEOF
+                echo "Created default ssl-default.conf"
+              fi
+
               chmod -R 755 /mnt/nfs/slb/nginx-conf
               echo "nginx config init complete"
           volumeMounts:
             - name: nfs-root
               mountPath: /mnt/nfs
+
+        # Stage 2: Generate self-signed cert if none present (nginx:alpine has openssl)
+        - name: init-certs
+          image: nginx:alpine
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f /certs/default.crt ] || [ ! -f /certs/default.key ]; then
+                echo "Generating self-signed certificate..."
+                openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+                  -keyout /certs/default.key \
+                  -out /certs/default.crt \
+                  -subj "/CN=*.vol.bestnathan.top/O=SLB"
+                chmod 644 /certs/default.crt
+                chmod 600 /certs/default.key
+                echo "Self-signed certificate created"
+              else
+                echo "Certificates already exist, skipping"
+              fi
+          volumeMounts:
+            - name: nfs-root
+              mountPath: /certs
+              subPath: slb/nginx-conf/certs
       containers:
         - name: nginx
           image: nginx:alpine
           ports:
             - containerPort: 80
               hostPort: 80
+              protocol: TCP
+            - containerPort: 443
+              hostPort: 443
               protocol: TCP
           livenessProbe:
             tcpSocket:
