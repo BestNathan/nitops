@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: slb
+  namespace: argocd
+  labels:
+    app: slb
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/BestNathan/nitops.git
+    targetRevision: main
+    path: components/slb
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: slb
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

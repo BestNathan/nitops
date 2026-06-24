@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginx-proxy
+  namespace: slb
+  labels:
+    app: nginx-proxy
+spec:
+  selector:
+    matchLabels:
+      app: nginx-proxy
+  template:
+    metadata:
+      labels:
+        app: nginx-proxy
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+        - name: init-config
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              # Ensure directory structure exists on NFS
+              mkdir -p /mnt/nfs/slb/nginx-conf/conf.d
+
+              # Create default nginx.conf if not present
+              if [ ! -f /mnt/nfs/slb/nginx-conf/nginx.conf ]; then
+                cat > /mnt/nfs/slb/nginx-conf/nginx.conf << 'NGINXEOF'
+              events {
+                worker_connections 1024;
+              }
+
+              http {
+                include /etc/nginx/conf.d/*.conf;
+              }
+              NGINXEOF
+                echo "Created default nginx.conf"
+              fi
+
+              # Create default site config if not present
+              if [ ! -f /mnt/nfs/slb/nginx-conf/conf.d/vol.bestnathan.top.conf ]; then
+                cat > /mnt/nfs/slb/nginx-conf/conf.d/vol.bestnathan.top.conf << 'SITEEOF'
+              server {
+                listen 80;
+                server_name *.vol.bestnathan.top;
+
+                location / {
+                  proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                }
+              }
+              SITEEOF
+                echo "Created default vol.bestnathan.top.conf"
+              fi
+
+              # Fix permissions
+              chmod -R 755 /mnt/nfs/slb/nginx-conf
+              echo "nginx config init complete"
+          volumeMounts:
+            - name: nfs-root
+              mountPath: /mnt/nfs
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+              hostPort: 80
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - name: nfs-root
+              mountPath: /etc/nginx
+              subPath: slb/nginx-conf
+      volumes:
+        - name: nfs-root
+          persistentVolumeClaim:
+            claimName: slb-nfs
