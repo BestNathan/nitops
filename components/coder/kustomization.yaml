@@ -8,5 +8,8 @@ resources:
   - coder/deployment.yaml
   - coder/service.yaml
   - coder/ingress.yaml
+  - coder/rbac/serviceaccount.yaml
+  - coder/rbac/clusterrole.yaml
+  - coder/rbac/rolebinding.yaml
   - postgres/deployment.yaml
   - postgres/service.yaml

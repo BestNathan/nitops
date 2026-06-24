@@ -15,6 +15,7 @@ spec:
       labels:
         app: coder
     spec:
+      serviceAccountName: coder
       initContainers:
         - name: wait-for-postgres
           image: postgres:17
