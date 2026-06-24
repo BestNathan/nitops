@@ -42,6 +42,12 @@ spec:
                   key: postgres-password
             - name: CODER_PG_CONNECTION_URL
               value: "postgresql://coder:$(POSTGRES_PASSWORD)@postgres.coder.svc:5432/coder?sslmode=disable"
+            - name: HTTP_PROXY
+              value: "http://192.168.2.98:7890"
+            - name: HTTPS_PROXY
+              value: "http://192.168.2.98:7890"
+            - name: NO_PROXY
+              value: "localhost,127.0.0.1,.svc,.svc.cluster.local,.nhome.local,192.168.2.0/24,10.0.0.0/8"
           ports:
             - containerPort: 7080
               name: http
