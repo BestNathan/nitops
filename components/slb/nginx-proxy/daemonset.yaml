@@ -98,7 +98,7 @@ spec:
             - name: nfs-root
               mountPath: /mnt/nfs
 
-        # Stage 2: Generate self-signed cert if none present (nginx:alpine has openssl)
+        # Stage 2: Generate self-signed cert if none present
         - name: init-certs
           image: nginx:alpine
           command:
@@ -106,6 +106,8 @@ spec:
             - -c
             - |
               if [ ! -f /certs/default.crt ] || [ ! -f /certs/default.key ]; then
+                echo "Installing openssl..."
+                apk add --no-cache openssl >/dev/null 2>&1
                 echo "Generating self-signed certificate..."
                 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
                   -keyout /certs/default.key \
