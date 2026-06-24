@@ -43,6 +43,8 @@ spec:
                   key: postgres-password
             - name: CODER_PG_CONNECTION_URL
               value: "postgresql://coder:$(POSTGRES_PASSWORD)@postgres.coder.svc:5432/coder?sslmode=disable"
+            - name: TF_PLUGIN_CACHE_DIR
+              value: "/home/coder/.terraform-cache"
             - name: HTTP_PROXY
               value: "http://192.168.2.98:7890"
             - name: HTTPS_PROXY
