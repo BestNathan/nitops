@@ -118,8 +118,8 @@ spec:
                 listen 443 ssl;
                 server_name coder.bestnathan.top;
 
-                ssl_certificate     /etc/nginx/certs/coder.crt;
-                ssl_certificate_key /etc/nginx/certs/coder.key;
+                ssl_certificate     /etc/nginx/certs/by-app/coder/coder.crt;
+                ssl_certificate_key /etc/nginx/certs/by-app/coder/coder.key;
                 ssl_protocols       TLSv1.2 TLSv1.3;
                 ssl_ciphers         HIGH:!aNULL:!MD5;
 
@@ -178,7 +178,6 @@ spec:
               }
 
               gen_cert "default" "*.vol.bestnathan.top"
-              gen_cert "coder" "coder.bestnathan.top"
           volumeMounts:
             - name: nfs-root
               mountPath: /certs
@@ -207,6 +206,10 @@ spec:
             - name: nfs-root
               mountPath: /etc/nginx
               subPath: slb/nginx-conf
+            - name: nfs-root
+              mountPath: /etc/nginx/certs/by-app/coder
+              subPath: coder/home/certs
+              readOnly: true
       volumes:
         - name: nfs-root
           persistentVolumeClaim:
