@@ -263,7 +263,7 @@ resource "kubernetes_deployment_v1" "main" {
           name              = "dev"
           image             = "ubuntu:24.04"
           image_pull_policy = "Always"
-          command           = ["sh", "-c", "apt-get update -qq && apt-get install -y -qq curl && ${coder_agent.main.init_script}"]
+          command           = ["sh", "-c", "apt-get update -qq && apt-get install -y -qq curl && printf '#!/bin/sh\nexec /usr/bin/curl -k \"$@\"\n' > /tmp/curl && chmod +x /tmp/curl && export PATH=/tmp:$PATH && ${coder_agent.main.init_script}"]
           env {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
