@@ -299,6 +299,11 @@ resource "kubernetes_deployment_v1" "main" {
           }
         }
 
+        # Schedule workspaces to AMD64 nodes (k8s-master, k8s-worker1, k8s-worker2)
+        node_selector = {
+          "kubernetes.io/arch" = "amd64"
+        }
+
         affinity {
           pod_anti_affinity {
             preferred_during_scheduling_ignored_during_execution {
