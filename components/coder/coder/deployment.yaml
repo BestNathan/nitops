@@ -48,6 +48,8 @@ spec:
               value: "0.0.0.0:7080"
             - name: CODER_ACCESS_URL
               value: "https://coder.bestnathan.top"
+            - name: CODER_AGENT_URL
+              value: "http://coder.coder.svc.cluster.local:7080"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
