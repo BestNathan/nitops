@@ -263,18 +263,10 @@ resource "kubernetes_deployment_v1" "main" {
           name              = "dev"
           image             = "codercom/enterprise-base:ubuntu"
           image_pull_policy = "Always"
-          command           = ["sh", "-c", "printf '#!/bin/sh\nexec /usr/bin/curl -k \"$@\"\n' > /tmp/curl && chmod +x /tmp/curl && PATH=/tmp:$PATH && curl -k -sS https://coder.bestnathan.top/ > /dev/null 2>&1 && openssl s_client -connect coder.bestnathan.top:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > /usr/local/share/ca-certificates/coder.crt && update-ca-certificates && ${coder_agent.main.init_script}"]
+          command           = ["sh", "-c", "printf '#!/bin/sh\nexec /usr/bin/curl -k \"$@\"\n' > /tmp/curl && chmod +x /tmp/curl && PATH=/tmp:$PATH && update-ca-certificates && ${coder_agent.main.init_script}"]
           env {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
-          }
-          env {
-            name  = "CODER_AGENT_URL"
-            value = "http://coder.coder.svc.cluster.local:7080"
-          }
-          env {
-            name  = "CODER_INSECURE"
-            value = "true"
           }
           resources {
             requests = {
@@ -291,6 +283,12 @@ resource "kubernetes_deployment_v1" "main" {
             name       = "home"
             sub_path   = "workspaces/${data.coder_workspace.me.id}/home"
             read_only  = false
+          }
+          volume_mount {
+            mount_path = "/usr/local/share/ca-certificates/coder.crt"
+            name       = "home"
+            sub_path   = "coder/home/certs/coder.crt"
+            read_only  = true
           }
         }
 
