@@ -263,9 +263,9 @@ resource "kubernetes_deployment_v1" "main" {
 
         container {
           name              = "dev"
-          image             = "ubuntu:24.04"
+          image             = "debian:bookworm-slim"
           image_pull_policy = "Always"
-          command           = ["sh", "-c", "apt-get update -qq && apt-get install -y -qq curl && ${coder_agent.main.init_script}"]
+          command           = ["sh", "-c", coder_agent.main.init_script]
           security_context {
             run_as_user = "1000"
           }
