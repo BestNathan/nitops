@@ -112,6 +112,11 @@ resource "coder_agent" "main" {
   startup_script = <<-EOT
     set -e
 
+    # Install curl if not present (ubuntu:24.04 is minimal)
+    if ! command -v curl >/dev/null 2>&1; then
+      apt-get update && apt-get install -y curl
+    fi
+
     # Install the latest code-server.
     # Append "--version x.x.x" to install a specific version of code-server.
     curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server
@@ -258,7 +263,7 @@ resource "kubernetes_deployment_v1" "main" {
 
         container {
           name              = "dev"
-          image             = "codercom/enterprise-base:ubuntu"
+          image             = "ubuntu:24.04"
           image_pull_policy = "Always"
           command           = ["sh", "-c", coder_agent.main.init_script]
           security_context {
