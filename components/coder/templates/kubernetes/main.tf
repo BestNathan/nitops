@@ -256,19 +256,14 @@ resource "kubernetes_deployment_v1" "main" {
       }
       spec {
         security_context {
-          run_as_user     = 1000
-          fs_group        = 1000
-          run_as_non_root = true
+          fs_group = 1000
         }
 
         container {
           name              = "dev"
-          image             = "debian:bookworm-slim"
+          image             = "ubuntu:24.04"
           image_pull_policy = "Always"
-          command           = ["sh", "-c", coder_agent.main.init_script]
-          security_context {
-            run_as_user = "1000"
-          }
+          command           = ["sh", "-c", "apt-get update -qq && apt-get install -y -qq curl && ${coder_agent.main.init_script}"]
           env {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
