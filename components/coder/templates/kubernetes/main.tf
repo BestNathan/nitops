@@ -268,6 +268,10 @@ resource "kubernetes_deployment_v1" "main" {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
           }
+          env {
+            name  = "CODER_AGENT_URL"
+            value = "http://coder.coder.svc.cluster.local:7080"
+          }
           resources {
             requests = {
               "cpu"    = "250m"
