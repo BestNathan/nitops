@@ -263,7 +263,7 @@ resource "kubernetes_deployment_v1" "main" {
           name              = "dev"
           image             = "codercom/enterprise-base:ubuntu"
           image_pull_policy = "Always"
-          command           = ["sh", "-c", "printf '#!/bin/sh\nexec /usr/bin/curl -k \"$@\"\n' > /tmp/curl && chmod +x /tmp/curl && export PATH=/tmp:$PATH && ${coder_agent.main.init_script}"]
+          command           = ["sh", "-c", "printf '#!/bin/sh\nexec /usr/bin/curl -k \"$@\"\n' > /tmp/curl && chmod +x /tmp/curl && PATH=/tmp:$PATH && curl -k -sS https://coder.bestnathan.top/ > /dev/null 2>&1 && openssl s_client -connect coder.bestnathan.top:443 </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/p' > /usr/local/share/ca-certificates/coder.crt && update-ca-certificates && ${coder_agent.main.init_script}"]
           env {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
