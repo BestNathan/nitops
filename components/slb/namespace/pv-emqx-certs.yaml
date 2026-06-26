@@ -14,6 +14,6 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     server: 192.168.2.105
-    path: /mnt/share/k8s/emqx/certs
+    path: /mnt/share/emqx/k8s-prod/data/certs
   storageClassName: nfs
   volumeMode: Filesystem
