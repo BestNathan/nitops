@@ -47,10 +47,9 @@ spec:
             - name: nginx-conf
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
-            # Site configs on NFS (Ansible managed)
-            - name: nfs-root
+            # Site configs from ConfigMap (GitOps managed)
+            - name: nginx-sites
               mountPath: /etc/nginx/conf.d
-              subPath: slb/nginx-conf/conf.d
             # Default certs on NFS
             - name: nfs-root
               mountPath: /etc/nginx/certs
@@ -69,6 +68,9 @@ spec:
         - name: nginx-conf
           configMap:
             name: nginx-config
+        - name: nginx-sites
+          configMap:
+            name: nginx-sites
         - name: nfs-root
           persistentVolumeClaim:
             claimName: slb-nfs

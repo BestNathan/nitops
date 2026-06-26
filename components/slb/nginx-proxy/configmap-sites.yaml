@@ -1,0 +1,129 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-sites
+  namespace: slb
+  labels:
+    app: nginx-proxy
+data:
+  # Catch-all default — return 444 for unknown hosts
+  00-default.conf: |
+    server {
+      listen 80 default_server;
+      server_name _;
+      return 444;
+    }
+
+    server {
+      listen 443 ssl default_server;
+      server_name _;
+      ssl_certificate     /etc/nginx/certs/default.crt;
+      ssl_certificate_key /etc/nginx/certs/default.key;
+      return 444;
+    }
+
+  # ArgoCD
+  argocd.conf: |
+    server {
+      listen 80;
+      server_name argocd.nhome.local argocd.bestnathan.top;
+
+      location / {
+        proxy_pass http://argocd-server.argocd.svc.cluster.local:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+    server {
+      listen 443 ssl;
+      server_name argocd.nhome.local argocd.bestnathan.top;
+
+      ssl_certificate     /etc/nginx/certs/by-app/argocd/argocd.crt;
+      ssl_certificate_key /etc/nginx/certs/by-app/argocd/argocd.key;
+      ssl_protocols       TLSv1.2 TLSv1.3;
+      ssl_ciphers         HIGH:!aNULL:!MD5;
+
+      location / {
+        proxy_pass http://argocd-server.argocd.svc.cluster.local:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+  # Coder
+  coder.conf: |
+    server {
+      listen 443 ssl;
+      server_name coder.bestnathan.top;
+
+      ssl_certificate     /etc/nginx/certs/coder.crt;
+      ssl_certificate_key /etc/nginx/certs/coder.key;
+      ssl_protocols       TLSv1.2 TLSv1.3;
+      ssl_ciphers         HIGH:!aNULL:!MD5;
+
+      location / {
+        proxy_pass http://coder.coder.svc.cluster.local:7080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+  # Vol Engine — wildcard HTTPS + HTTP
+  vol.conf: |
+    server {
+      listen 80;
+      server_name *.vol.bestnathan.top;
+
+      location / {
+        proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+    server {
+      listen 443 ssl;
+      server_name *.vol.bestnathan.top;
+
+      ssl_certificate     /etc/nginx/certs/default.crt;
+      ssl_certificate_key /etc/nginx/certs/default.key;
+      ssl_protocols       TLSv1.2 TLSv1.3;
+      ssl_ciphers         HIGH:!aNULL:!MD5;
+
+      location / {
+        proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
