@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: emqx-mqtt-ws
+  namespace: emqx
+  annotations:
+    higress.io/upstream-read-timeout: "3600"
+spec:
+  ingressClassName: higress
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: emqx-nodeport
+                port:
+                  number: 8083
+            path: /mqtt
+            pathType: Prefix
