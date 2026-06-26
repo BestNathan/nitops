@@ -151,8 +151,8 @@ data:
       listen 443 ssl;
       server_name emqx.nhome.local emqx.bestnathan.top;
 
-      ssl_certificate     /etc/nginx/certs/by-app/emqx/emqx.crt;
-      ssl_certificate_key /etc/nginx/certs/by-app/emqx/emqx.key;
+      ssl_certificate     /etc/nginx/certs/emqx.crt;
+      ssl_certificate_key /etc/nginx/certs/emqx.key;
       ssl_protocols       TLSv1.2 TLSv1.3;
       ssl_ciphers         HIGH:!aNULL:!MD5;
 
@@ -194,8 +194,8 @@ data:
       listen 443 ssl;
       server_name mqtt.nhome.local mqtt.bestnathan.top;
 
-      ssl_certificate     /etc/nginx/certs/by-app/emqx/mqtt.crt;
-      ssl_certificate_key /etc/nginx/certs/by-app/emqx/mqtt.key;
+      ssl_certificate     /etc/nginx/certs/mqtt.crt;
+      ssl_certificate_key /etc/nginx/certs/mqtt.key;
       ssl_protocols       TLSv1.2 TLSv1.3;
       ssl_ciphers         HIGH:!aNULL:!MD5;
 
