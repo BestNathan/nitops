@@ -23,7 +23,7 @@ spec:
             - sh
             - -c
             - |
-              mkdir -p /etc/nginx/conf.d /etc/nginx/certs
+              mkdir -p /etc/nginx/conf.d /etc/nginx/certs /certs/emqx
               exec nginx -g "daemon off;"
           ports:
             - containerPort: 80
@@ -66,7 +66,7 @@ spec:
               readOnly: true
             # EMQX TLS certs — direct PVC mount (no subPath), certs live at /mnt/share/k8s/emqx/certs/
             - name: emqx-certs
-              mountPath: /etc/nginx/certs/by-app/emqx
+              mountPath: /certs/emqx
               readOnly: true
       volumes:
         - name: nginx-conf
