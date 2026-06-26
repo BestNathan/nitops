@@ -64,6 +64,10 @@ spec:
               mountPath: /etc/nginx/certs/by-app/argocd
               subPath: argocd/certs
               readOnly: true
+            # EMQX TLS certs — direct PVC mount (no subPath), certs live at /mnt/share/k8s/emqx/certs/
+            - name: emqx-certs
+              mountPath: /etc/nginx/certs/by-app/emqx
+              readOnly: true
       volumes:
         - name: nginx-conf
           configMap:
@@ -74,3 +78,6 @@ spec:
         - name: nfs-root
           persistentVolumeClaim:
             claimName: slb-nfs
+        - name: emqx-certs
+          persistentVolumeClaim:
+            claimName: emqx-certs

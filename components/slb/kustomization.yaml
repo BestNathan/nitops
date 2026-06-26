@@ -4,6 +4,8 @@ resources:
   - namespace/namespace.yaml
   - namespace/pv.yaml
   - namespace/pvc.yaml
+  - namespace/pv-emqx-certs.yaml
+  - namespace/pvc-emqx-certs.yaml
   - nginx-proxy/configmap.yaml
   - nginx-proxy/configmap-sites.yaml
   - nginx-proxy/daemonset.yaml

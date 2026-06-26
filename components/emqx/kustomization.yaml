@@ -4,6 +4,8 @@ resources:
   - namespace/namespace.yaml
   - namespace/pv.yaml
   - namespace/pvc.yaml
+  - namespace/pv-certs.yaml
+  - namespace/pvc-certs.yaml
   - emqx/service.yaml
   - emqx/statefulset.yaml
   - ingress.yaml
