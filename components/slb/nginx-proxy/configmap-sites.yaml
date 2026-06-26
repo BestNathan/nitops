@@ -127,3 +127,89 @@ data:
         proxy_set_header Connection "upgrade";
       }
     }
+
+  # EMQX Dashboard — HTTP reverse proxy
+  emqx-dashboard.conf: |
+    server {
+      listen 80;
+      server_name emqx.nhome.local emqx.bestnathan.top;
+
+      location / {
+        proxy_pass http://emqx-nodeport.emqx.svc.cluster.local:18083;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+    server {
+      listen 443 ssl;
+      server_name emqx.nhome.local emqx.bestnathan.top;
+
+      ssl_certificate     /etc/nginx/certs/by-app/emqx/emqx.crt;
+      ssl_certificate_key /etc/nginx/certs/by-app/emqx/emqx.key;
+      ssl_protocols       TLSv1.2 TLSv1.3;
+      ssl_ciphers         HIGH:!aNULL:!MD5;
+
+      location / {
+        proxy_pass http://emqx-nodeport.emqx.svc.cluster.local:18083;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+  # EMQX MQTT WebSocket — WebSocket upgrade proxy
+  emqx-ws.conf: |
+    server {
+      listen 80;
+      server_name mqtt.nhome.local mqtt.bestnathan.top;
+
+      location / {
+        proxy_pass http://emqx-nodeport.emqx.svc.cluster.local:8083;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+      }
+    }
+
+    server {
+      listen 443 ssl;
+      server_name mqtt.nhome.local mqtt.bestnathan.top;
+
+      ssl_certificate     /etc/nginx/certs/by-app/emqx/mqtt.crt;
+      ssl_certificate_key /etc/nginx/certs/by-app/emqx/mqtt.key;
+      ssl_protocols       TLSv1.2 TLSv1.3;
+      ssl_ciphers         HIGH:!aNULL:!MD5;
+
+      location / {
+        proxy_pass http://emqx-nodeport.emqx.svc.cluster.local:8083;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+      }
+    }

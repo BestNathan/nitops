@@ -64,6 +64,10 @@ spec:
               mountPath: /etc/nginx/certs/by-app/argocd
               subPath: argocd/certs
               readOnly: true
+            - name: nfs-root
+              mountPath: /etc/nginx/certs/by-app/emqx
+              subPath: emqx/certs
+              readOnly: true
       volumes:
         - name: nginx-conf
           configMap:
