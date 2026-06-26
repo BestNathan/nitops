@@ -29,3 +29,8 @@ spec:
               number: 80
         path: /
         pathType: Prefix
+  tls:
+  - hosts:
+    - argocd.nhome.local
+    - argocd.bestnathan.top
+    secretName: argocd-tls
