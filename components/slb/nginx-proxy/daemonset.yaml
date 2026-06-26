@@ -19,6 +19,12 @@ spec:
       containers:
         - name: nginx
           image: nginx:alpine
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /etc/nginx/conf.d /etc/nginx/certs
+              exec nginx -g "daemon off;"
           ports:
             - containerPort: 80
               hostPort: 80
@@ -37,11 +43,20 @@ spec:
             initialDelaySeconds: 3
             periodSeconds: 5
           volumeMounts:
-            # Nginx configs on NFS
+            # Main nginx config from ConfigMap
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            # Site configs on NFS (Ansible managed)
             - name: nfs-root
-              mountPath: /etc/nginx
-              subPath: slb/nginx-conf
-            # App TLS certs on NFS (read-only)
+              mountPath: /etc/nginx/conf.d
+              subPath: slb/nginx-conf/conf.d
+            # Default certs on NFS
+            - name: nfs-root
+              mountPath: /etc/nginx/certs
+              subPath: slb/nginx-conf/certs
+              readOnly: true
+            # App TLS certs via NFS subPath (read-only)
             - name: nfs-root
               mountPath: /etc/nginx/certs/by-app/coder
               subPath: coder/home/certs
@@ -51,6 +66,9 @@ spec:
               subPath: argocd/certs
               readOnly: true
       volumes:
+        - name: nginx-conf
+          configMap:
+            name: nginx-config
         - name: nfs-root
           persistentVolumeClaim:
             claimName: slb-nfs
