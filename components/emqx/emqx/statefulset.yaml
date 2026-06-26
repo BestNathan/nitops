@@ -24,34 +24,6 @@ spec:
                     values:
                       - k8s-worker2
               weight: 100
-      initContainers:
-        - name: init-certs
-          image: nginx:alpine
-          command:
-            - sh
-            - -c
-            - |
-              mkdir -p /data/certs
-              if [ ! -f /data/certs/emqx.crt ]; then
-                echo "Generating self-signed TLS certificates..."
-                apk add --no-cache openssl > /dev/null 2>&1
-                openssl req -x509 -newkey rsa:2048 -nodes \
-                  -keyout /data/certs/emqx.key -out /data/certs/emqx.crt -days 3650 \
-                  -subj "/CN=emqx.bestnathan.top" \
-                  -addext "subjectAltName=DNS:emqx.nhome.local,DNS:emqx.bestnathan.top"
-                openssl req -x509 -newkey rsa:2048 -nodes \
-                  -keyout /data/certs/mqtt.key -out /data/certs/mqtt.crt -days 3650 \
-                  -subj "/CN=mqtt.bestnathan.top" \
-                  -addext "subjectAltName=DNS:mqtt.nhome.local,DNS:mqtt.bestnathan.top"
-                echo "Certificates generated."
-              else
-                echo "Certificates already exist, skipping generation."
-              fi
-              ls -la /data/certs/
-          volumeMounts:
-            - name: emqx-data
-              mountPath: /data
-              subPath: k8s-prod/data
       containers:
         - name: emqx
           image: emqx/emqx:5.8.4
