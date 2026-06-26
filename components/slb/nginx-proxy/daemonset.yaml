@@ -16,172 +16,6 @@ spec:
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
-      initContainers:
-        # Stage 1: Ensure config directory structure and default config files
-        - name: init-config
-          image: busybox
-          command:
-            - sh
-            - -c
-            - |
-              mkdir -p /mnt/nfs/slb/nginx-conf/conf.d
-              mkdir -p /mnt/nfs/slb/nginx-conf/certs
-
-              # Create default nginx.conf if not present
-              if [ ! -f /mnt/nfs/slb/nginx-conf/nginx.conf ]; then
-                cat > /mnt/nfs/slb/nginx-conf/nginx.conf << 'NGINXEOF'
-              events {
-                worker_connections 1024;
-              }
-
-              http {
-                include /etc/nginx/conf.d/*.conf;
-              }
-              NGINXEOF
-                echo "Created default nginx.conf"
-              fi
-
-              # Create default HTTP site config if not present
-              if [ ! -f /mnt/nfs/slb/nginx-conf/conf.d/vol.bestnathan.top.conf ]; then
-                cat > /mnt/nfs/slb/nginx-conf/conf.d/vol.bestnathan.top.conf << 'SITEEOF'
-              server {
-                listen 80;
-                server_name *.vol.bestnathan.top;
-
-                location / {
-                  proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                }
-              }
-              SITEEOF
-                echo "Created default vol.bestnathan.top.conf"
-              fi
-
-              # Create default SSL site config if not present
-              if [ ! -f /mnt/nfs/slb/nginx-conf/conf.d/ssl-default.conf ]; then
-                cat > /mnt/nfs/slb/nginx-conf/conf.d/ssl-default.conf << 'SSLEOF'
-              server {
-                listen 443 ssl;
-                server_name *.vol.bestnathan.top;
-
-                ssl_certificate     /etc/nginx/certs/default.crt;
-                ssl_certificate_key /etc/nginx/certs/default.key;
-                ssl_protocols       TLSv1.2 TLSv1.3;
-                ssl_ciphers         HIGH:!aNULL:!MD5;
-
-                location / {
-                  proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto https;
-
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                }
-              }
-              SSLEOF
-                echo "Created default ssl-default.conf"
-              fi
-
-              # Create default coder proxy config if not present
-              if [ ! -f /mnt/nfs/slb/nginx-conf/conf.d/coder.conf ]; then
-                cat > /mnt/nfs/slb/nginx-conf/conf.d/coder.conf << 'CODEOF'
-              # HTTP
-              server {
-                listen 80;
-                server_name coder.bestnathan.top;
-
-                location / {
-                  proxy_pass http://coder.coder.svc.cluster.local:7080;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                }
-              }
-
-              # HTTPS
-              server {
-                listen 443 ssl;
-                server_name coder.bestnathan.top;
-
-                ssl_certificate     /etc/nginx/certs/by-app/coder/coder.crt;
-                ssl_certificate_key /etc/nginx/certs/by-app/coder/coder.key;
-                ssl_protocols       TLSv1.2 TLSv1.3;
-                ssl_ciphers         HIGH:!aNULL:!MD5;
-
-                location / {
-                  proxy_pass http://coder.coder.svc.cluster.local:7080;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto https;
-
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                }
-              }
-              CODEOF
-                echo "Created default coder.conf"
-              fi
-
-              chmod -R 755 /mnt/nfs/slb/nginx-conf
-              echo "nginx config init complete"
-          volumeMounts:
-            - name: nfs-root
-              mountPath: /mnt/nfs
-
-        # Stage 2: Generate self-signed certs if not present
-        - name: init-certs
-          image: nginx:alpine
-          command:
-            - sh
-            - -c
-            - |
-              install_openssl() {
-                if ! command -v openssl >/dev/null 2>&1; then
-                  echo "Installing openssl..."
-                  apk add --no-cache openssl >/dev/null 2>&1
-                fi
-              }
-
-              gen_cert() {
-                local name=$1
-                local domain=$2
-                if [ ! -f "/certs/${name}.crt" ] || [ ! -f "/certs/${name}.key" ]; then
-                  install_openssl
-                  echo "Generating self-signed cert for ${domain}..."
-                  openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-                    -keyout "/certs/${name}.key" \
-                    -out "/certs/${name}.crt" \
-                    -subj "/CN=${domain}/O=SLB"
-                  chmod 644 "/certs/${name}.crt"
-                  chmod 600 "/certs/${name}.key"
-                  echo "Cert ${name} created"
-                else
-                  echo "Cert ${name} already exists, skipping"
-                fi
-              }
-
-              gen_cert "default" "*.vol.bestnathan.top"
-          volumeMounts:
-            - name: nfs-root
-              mountPath: /certs
-              subPath: slb/nginx-conf/certs
       containers:
         - name: nginx
           image: nginx:alpine
@@ -203,12 +37,18 @@ spec:
             initialDelaySeconds: 3
             periodSeconds: 5
           volumeMounts:
+            # Nginx configs on NFS
             - name: nfs-root
               mountPath: /etc/nginx
               subPath: slb/nginx-conf
+            # App TLS certs on NFS (read-only)
             - name: nfs-root
               mountPath: /etc/nginx/certs/by-app/coder
               subPath: coder/home/certs
+              readOnly: true
+            - name: nfs-root
+              mountPath: /etc/nginx/certs/by-app/argocd
+              subPath: argocd/certs
               readOnly: true
       volumes:
         - name: nfs-root
