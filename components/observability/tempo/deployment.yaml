@@ -19,6 +19,7 @@ spec:
         - name: tempo
           image: grafana/tempo:main-40b985c-amd64
           args:
+            - "--target=all"
             - "--config.file=/etc/tempo/tempo.yaml"
           ports:
             - containerPort: 3200
@@ -44,6 +45,7 @@ spec:
               mountPath: /etc/tempo
             - name: data
               mountPath: /var/tempo
+              subPath: tempo
           resources:
             requests:
               memory: "512Mi"
@@ -58,3 +60,5 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: shared-nfs
+      nodeSelector:
+        kubernetes.io/arch: amd64
