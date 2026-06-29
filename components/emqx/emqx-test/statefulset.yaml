@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: emqx-test
+  namespace: emqx
+  labels:
+    app: emqx
+    cluster: k8s-test
+spec:
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: emqx
+      cluster: k8s-test
+  serviceName: emqx-test-headless
+  template:
+    metadata:
+      labels:
+        app: emqx
+        cluster: k8s-test
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: emqx
+                    cluster: k8s-test
+                topologyKey: kubernetes.io/hostname
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: emqx
+          image: emqx/emqx:5.8.4
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: EMQX_NODE__NAME
+              value: "emqx@$(POD_IP)"
+            - name: EMQX_CLUSTER__DISCOVERY_STRATEGY
+              value: dns
+            - name: EMQX_CLUSTER__DNS__RECORD_TYPE
+              value: a
+            - name: EMQX_CLUSTER__DNS__NAME
+              value: emqx-test-headless.emqx.svc.cluster.local
+            - name: EMQX_RPC__PORT_DISCOVERY
+              value: stateless
+          ports:
+            - containerPort: 1883
+              name: mqtt
+            - containerPort: 8083
+              name: ws
+            - containerPort: 8084
+              name: wss
+            - containerPort: 8883
+              name: mqtts
+            - containerPort: 18083
+              name: dashboard
+            - containerPort: 4370
+              name: ekka
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+            requests:
+              cpu: 200m
+              memory: 512Mi
+          volumeMounts:
+            - name: emqx-data
+              mountPath: /opt/emqx/data
+              subPathExpr: k8s-test/data/$(POD_NAME)
+      volumes:
+        - name: emqx-data
+          persistentVolumeClaim:
+            claimName: emqx-data
