@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: emqx
+  name: emqx-prod
   namespace: emqx
   labels:
     app: emqx
@@ -13,7 +13,7 @@ spec:
     matchLabels:
       app: emqx
       cluster: emqx-prod
-  serviceName: emqx-headless
+  serviceName: emqx-prod-headless
   template:
     metadata:
       labels:
@@ -51,7 +51,7 @@ spec:
             - name: EMQX_CLUSTER__DNS__RECORD_TYPE
               value: a
             - name: EMQX_CLUSTER__DNS__NAME
-              value: emqx-headless.emqx.svc.cluster.local
+              value: emqx-prod-headless.emqx.svc.cluster.local
             - name: EMQX_RPC__PORT_DISCOVERY
               value: stateless
             - name: EMQX_NODE__COOKIE

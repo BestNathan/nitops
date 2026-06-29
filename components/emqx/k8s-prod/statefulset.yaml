@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: emqx-k8s-prod
+  name: emqx
   namespace: emqx
   labels:
     app: emqx
@@ -12,7 +12,7 @@ spec:
     matchLabels:
       app: emqx
       cluster: k8s-prod
-  serviceName: emqx-k8s-prod-headless
+  serviceName: emqx-headless
   template:
     metadata:
       labels:
