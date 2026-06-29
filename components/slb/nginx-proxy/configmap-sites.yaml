@@ -213,3 +213,85 @@ data:
         proxy_send_timeout 3600s;
       }
     }
+
+  # Nession — apex → server, wildcard subdomains → agent
+  nession.conf: |
+    # Apex domains → nession-server
+    server {
+      listen 80;
+      server_name nession.nhome.local nession.bestnathan.top;
+
+      location / {
+        proxy_pass http://nession-server.nession.svc.cluster.local:10080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+    server {
+      listen 443 ssl;
+      server_name nession.nhome.local nession.bestnathan.top;
+
+      ssl_certificate     /certs/nession/nession.crt;
+      ssl_certificate_key /certs/nession/nession.key;
+      ssl_protocols       TLSv1.2 TLSv1.3;
+      ssl_ciphers         HIGH:!aNULL:!MD5;
+
+      location / {
+        proxy_pass http://nession-server.nession.svc.cluster.local:10080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+    # Wildcard subdomains → nession-agent
+    server {
+      listen 80;
+      server_name *.nession.nhome.local *.nession.bestnathan.top;
+
+      location / {
+        proxy_pass http://nession-agent.nession.svc.cluster.local:10080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+    server {
+      listen 443 ssl;
+      server_name *.nession.nhome.local *.nession.bestnathan.top;
+
+      ssl_certificate     /certs/nession/nession.crt;
+      ssl_certificate_key /certs/nession/nession.key;
+      ssl_protocols       TLSv1.2 TLSv1.3;
+      ssl_ciphers         HIGH:!aNULL:!MD5;
+
+      location / {
+        proxy_pass http://nession-agent.nession.svc.cluster.local:10080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }

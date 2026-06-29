@@ -23,7 +23,7 @@ spec:
             - sh
             - -c
             - |
-              mkdir -p /etc/nginx/conf.d /etc/nginx/certs /certs/emqx
+              mkdir -p /etc/nginx/conf.d /etc/nginx/certs /certs/emqx /certs/nession
               exec nginx -g "daemon off;"
           ports:
             - containerPort: 80
@@ -67,6 +67,11 @@ spec:
             # EMQX TLS certs — direct PVC mount (no subPath), certs live at /mnt/share/k8s/emqx/certs/
             - name: emqx-certs
               mountPath: /certs/emqx
+              readOnly: true
+            # Nession TLS certs — subPath from slb-nfs PVC
+            - name: nfs-root
+              mountPath: /certs/nession
+              subPath: nession/certs
               readOnly: true
       volumes:
         - name: nginx-conf
