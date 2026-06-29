@@ -32,20 +32,17 @@ data:
         namespace: otel
         const_labels:
           cluster: k8s
-      debug:
-        verbosity: basic
-
     service:
       pipelines:
         traces:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [otlphttp/tempo, debug]
+          exporters: [otlphttp/tempo]
         metrics:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [prometheus, debug]
+          exporters: [prometheus]
         logs:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [otlphttp/loki, debug]
+          exporters: [otlphttp/loki]
