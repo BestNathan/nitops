@@ -7,7 +7,7 @@ metadata:
     app: emqx
     cluster: k8s-test
 spec:
-  replicas: 3
+  replicas: 5
   podManagementPolicy: Parallel
   selector:
     matchLabels:
