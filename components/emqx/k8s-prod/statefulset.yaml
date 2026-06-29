@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: emqx-k8s-prod
+  namespace: emqx
+  labels:
+    app: emqx
+    cluster: k8s-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: emqx
+      cluster: k8s-prod
+  serviceName: emqx-k8s-prod-headless
+  template:
+    metadata:
+      labels:
+        app: emqx
+        cluster: k8s-prod
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - k8s-worker2
+              weight: 100
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: emqx
+          image: emqx/emqx:5.8.4
+          env:
+            - name: EMQX_NODE__NAME
+              value: emqx@node.emqx.k8s
+          ports:
+            - containerPort: 1883
+              name: mqtt
+            - containerPort: 8083
+              name: ws
+            - containerPort: 8084
+              name: wss
+            - containerPort: 8883
+              name: mqtts
+            - containerPort: 18083
+              name: dashboard
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+            requests:
+              cpu: 200m
+              memory: 512Mi
+          volumeMounts:
+            - name: emqx-data
+              mountPath: /opt/emqx/data
+              subPath: k8s-prod/data
+      volumes:
+        - name: emqx-data
+          persistentVolumeClaim:
+            claimName: emqx-data
