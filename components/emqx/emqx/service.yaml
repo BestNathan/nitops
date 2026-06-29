@@ -5,6 +5,7 @@ metadata:
   namespace: emqx
   labels:
     app: emqx
+    cluster: emqx-prod
 spec:
   clusterIP: None
   ports:
@@ -14,8 +15,12 @@ spec:
     - name: dashboard
       port: 18083
       targetPort: 18083
+    - name: ekka
+      port: 4370
+      targetPort: 4370
   selector:
     app: emqx
+    cluster: emqx-prod
   type: ClusterIP
 ---
 apiVersion: v1
@@ -25,6 +30,7 @@ metadata:
   namespace: emqx
   labels:
     app: emqx
+    cluster: emqx-prod
 spec:
   ports:
     - name: mqtt
@@ -45,4 +51,5 @@ spec:
       nodePort: 30884
   selector:
     app: emqx
+    cluster: emqx-prod
   type: NodePort

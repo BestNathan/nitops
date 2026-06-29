@@ -6,6 +6,4 @@ resources:
   - namespace/pvc.yaml
   - emqx/service.yaml
   - emqx/statefulset.yaml
-  - emqx-test/service.yaml
-  - emqx-test/statefulset.yaml
   - ingress.yaml

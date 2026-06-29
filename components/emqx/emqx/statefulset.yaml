@@ -3,33 +3,59 @@ kind: StatefulSet
 metadata:
   name: emqx
   namespace: emqx
+  labels:
+    app: emqx
+    cluster: emqx-prod
 spec:
-  replicas: 1
+  replicas: 3
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app: emqx
+      cluster: emqx-prod
   serviceName: emqx-headless
   template:
     metadata:
       labels:
         app: emqx
+        cluster: emqx-prod
     spec:
       affinity:
-        nodeAffinity:
+        podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            - preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - k8s-worker2
-              weight: 100
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: emqx
+                    cluster: emqx-prod
+                topologyKey: kubernetes.io/hostname
+      nodeSelector:
+        kubernetes.io/arch: amd64
       containers:
         - name: emqx
           image: emqx/emqx:5.8.4
           env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             - name: EMQX_NODE__NAME
-              value: emqx@node.emqx.k8s
+              value: "emqx@$(POD_IP)"
+            - name: EMQX_CLUSTER__DISCOVERY_STRATEGY
+              value: dns
+            - name: EMQX_CLUSTER__DNS__RECORD_TYPE
+              value: a
+            - name: EMQX_CLUSTER__DNS__NAME
+              value: emqx-headless.emqx.svc.cluster.local
+            - name: EMQX_RPC__PORT_DISCOVERY
+              value: stateless
+            - name: EMQX_NODE__COOKIE
+              value: emqx-prod-cluster
           ports:
             - containerPort: 1883
               name: mqtt
@@ -41,6 +67,8 @@ spec:
               name: mqtts
             - containerPort: 18083
               name: dashboard
+            - containerPort: 4370
+              name: ekka
           resources:
             limits:
               cpu: "2"
@@ -51,9 +79,7 @@ spec:
           volumeMounts:
             - name: emqx-data
               mountPath: /opt/emqx/data
-              subPath: k8s-prod/data
-      nodeSelector:
-        kubernetes.io/arch: amd64
+              subPathExpr: emqx-prod/data/$(POD_NAME)
       volumes:
         - name: emqx-data
           persistentVolumeClaim:
