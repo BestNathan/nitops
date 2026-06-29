@@ -23,7 +23,7 @@ spec:
             - sh
             - -c
             - |
-              mkdir -p /etc/nginx/conf.d /etc/nginx/certs /certs/emqx /certs/nession
+              mkdir -p /etc/nginx/conf.d /etc/nginx/certs
               exec nginx -g "daemon off;"
           ports:
             - containerPort: 80
@@ -50,28 +50,10 @@ spec:
             # Site configs from ConfigMap (GitOps managed)
             - name: nginx-sites
               mountPath: /etc/nginx/conf.d
-            # Default certs on NFS
+            # Default TLS cert on NFS
             - name: nfs-root
               mountPath: /etc/nginx/certs
               subPath: slb/nginx-conf/certs
-              readOnly: true
-            # App TLS certs via NFS subPath (read-only)
-            - name: nfs-root
-              mountPath: /etc/nginx/certs/by-app/coder
-              subPath: coder/home/certs
-              readOnly: true
-            - name: nfs-root
-              mountPath: /etc/nginx/certs/by-app/argocd
-              subPath: argocd/certs
-              readOnly: true
-            # EMQX TLS certs — direct PVC mount (no subPath), certs live at /mnt/share/k8s/emqx/certs/
-            - name: emqx-certs
-              mountPath: /certs/emqx
-              readOnly: true
-            # Nession TLS certs — subPath from slb-nfs PVC
-            - name: nfs-root
-              mountPath: /certs/nession
-              subPath: nession/certs
               readOnly: true
       volumes:
         - name: nginx-conf
@@ -83,6 +65,3 @@ spec:
         - name: nfs-root
           persistentVolumeClaim:
             claimName: slb-nfs
-        - name: emqx-certs
-          persistentVolumeClaim:
-            claimName: emqx-certs

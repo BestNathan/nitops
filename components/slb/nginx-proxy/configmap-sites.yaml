@@ -6,109 +6,75 @@ metadata:
   labels:
     app: nginx-proxy
 data:
-  # Catch-all default — return 444 for unknown hosts
-  00-default.conf: |
+  # All traffic → Higress. TLS terminated with wildcard certs via SNI.
+  00-catch-all.conf: |
     server {
       listen 80 default_server;
       server_name _;
-      return 444;
+
+      location / {
+        proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
     }
 
+    # Internal domains
+    server {
+      listen 443 ssl;
+      server_name *.nhome.local;
+
+      ssl_certificate     /etc/nginx/certs/nhome.crt;
+      ssl_certificate_key /etc/nginx/certs/nhome.key;
+      ssl_protocols       TLSv1.2 TLSv1.3;
+      ssl_ciphers         HIGH:!aNULL:!MD5;
+
+      location / {
+        proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+    # Public domains
+    server {
+      listen 443 ssl;
+      server_name *.bestnathan.top;
+
+      ssl_certificate     /etc/nginx/certs/bestnathan.crt;
+      ssl_certificate_key /etc/nginx/certs/bestnathan.key;
+      ssl_protocols       TLSv1.2 TLSv1.3;
+      ssl_ciphers         HIGH:!aNULL:!MD5;
+
+      location / {
+        proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
+    # Fallback — multi-level wildcards (*.vol.bestnathan.top, *.nession.nhome.local, etc.)
     server {
       listen 443 ssl default_server;
       server_name _;
-      ssl_certificate     /etc/nginx/certs/default.crt;
-      ssl_certificate_key /etc/nginx/certs/default.key;
-      return 444;
-    }
-
-  # ArgoCD
-  argocd.conf: |
-    server {
-      listen 80;
-      server_name argocd.nhome.local argocd.bestnathan.top;
-
-      location / {
-        proxy_pass http://argocd-server.argocd.svc.cluster.local:80;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-    server {
-      listen 443 ssl;
-      server_name argocd.nhome.local argocd.bestnathan.top;
-
-      ssl_certificate     /etc/nginx/certs/by-app/argocd/argocd.crt;
-      ssl_certificate_key /etc/nginx/certs/by-app/argocd/argocd.key;
-      ssl_protocols       TLSv1.2 TLSv1.3;
-      ssl_ciphers         HIGH:!aNULL:!MD5;
-
-      location / {
-        proxy_pass http://argocd-server.argocd.svc.cluster.local:80;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-  # Coder
-  coder.conf: |
-    server {
-      listen 443 ssl;
-      server_name coder.bestnathan.top;
-
-      ssl_certificate     /etc/nginx/certs/coder.crt;
-      ssl_certificate_key /etc/nginx/certs/coder.key;
-      ssl_protocols       TLSv1.2 TLSv1.3;
-      ssl_ciphers         HIGH:!aNULL:!MD5;
-
-      location / {
-        proxy_pass http://coder.coder.svc.cluster.local:7080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-  # Vol Engine — wildcard HTTPS + HTTP
-  vol.conf: |
-    server {
-      listen 80;
-      server_name *.vol.bestnathan.top;
-
-      location / {
-        proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-    server {
-      listen 443 ssl;
-      server_name *.vol.bestnathan.top;
 
       ssl_certificate     /etc/nginx/certs/default.crt;
       ssl_certificate_key /etc/nginx/certs/default.key;
@@ -117,193 +83,6 @@ data:
 
       location / {
         proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-  # EMQX Dashboard — HTTP reverse proxy
-  emqx-dashboard.conf: |
-    server {
-      listen 80;
-      server_name emqx.nhome.local emqx.bestnathan.top;
-
-      location / {
-        proxy_pass http://emqx-nodeport.emqx.svc.cluster.local:18083;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-    server {
-      listen 443 ssl;
-      server_name emqx.nhome.local emqx.bestnathan.top;
-
-      ssl_certificate     /certs/emqx/emqx.crt;
-      ssl_certificate_key /certs/emqx/emqx.key;
-      ssl_protocols       TLSv1.2 TLSv1.3;
-      ssl_ciphers         HIGH:!aNULL:!MD5;
-
-      location / {
-        proxy_pass http://emqx-nodeport.emqx.svc.cluster.local:18083;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-  # EMQX Prod Dashboard
-  emqx-prod-dashboard.conf: |
-    server {
-      listen 80;
-      server_name emqx-prod.nhome.local;
-
-      location / {
-        proxy_pass http://emqx-prod-nodeport.emqx.svc.cluster.local:18083;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-  # EMQX MQTT WebSocket — WebSocket upgrade proxy
-  emqx-ws.conf: |
-    server {
-      listen 80;
-      server_name mqtt.nhome.local mqtt.bestnathan.top;
-
-      location / {
-        proxy_pass http://emqx-nodeport.emqx.svc.cluster.local:8083;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_read_timeout 3600s;
-        proxy_send_timeout 3600s;
-      }
-    }
-
-    server {
-      listen 443 ssl;
-      server_name mqtt.nhome.local mqtt.bestnathan.top;
-
-      ssl_certificate     /certs/emqx/mqtt.crt;
-      ssl_certificate_key /certs/emqx/mqtt.key;
-      ssl_protocols       TLSv1.2 TLSv1.3;
-      ssl_ciphers         HIGH:!aNULL:!MD5;
-
-      location / {
-        proxy_pass http://emqx-nodeport.emqx.svc.cluster.local:8083;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_read_timeout 3600s;
-        proxy_send_timeout 3600s;
-      }
-    }
-
-  # Nession — apex → server, wildcard subdomains → agent
-  nession.conf: |
-    # Apex domains → nession-server
-    server {
-      listen 80;
-      server_name nession.nhome.local nession.bestnathan.top;
-
-      location / {
-        proxy_pass http://nession-server.nession.svc.cluster.local:10080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-    server {
-      listen 443 ssl;
-      server_name nession.nhome.local nession.bestnathan.top;
-
-      ssl_certificate     /certs/nession/nession.crt;
-      ssl_certificate_key /certs/nession/nession.key;
-      ssl_protocols       TLSv1.2 TLSv1.3;
-      ssl_ciphers         HIGH:!aNULL:!MD5;
-
-      location / {
-        proxy_pass http://nession-server.nession.svc.cluster.local:10080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-    # Wildcard subdomains → nession-agent
-    server {
-      listen 80;
-      server_name *.nession.nhome.local *.nession.bestnathan.top;
-
-      location / {
-        proxy_pass http://nession-agent.nession.svc.cluster.local:10080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      }
-    }
-
-    server {
-      listen 443 ssl;
-      server_name *.nession.nhome.local *.nession.bestnathan.top;
-
-      ssl_certificate     /certs/nession/nession.crt;
-      ssl_certificate_key /certs/nession/nession.key;
-      ssl_protocols       TLSv1.2 TLSv1.3;
-      ssl_ciphers         HIGH:!aNULL:!MD5;
-
-      location / {
-        proxy_pass http://nession-agent.nession.svc.cluster.local:10080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
