@@ -169,6 +169,25 @@ data:
       }
     }
 
+  # EMQX Prod Dashboard
+  emqx-prod-dashboard.conf: |
+    server {
+      listen 80;
+      server_name emqx-prod.nhome.local;
+
+      location / {
+        proxy_pass http://emqx-prod-nodeport.emqx.svc.cluster.local:18083;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
+
   # EMQX MQTT WebSocket — WebSocket upgrade proxy
   emqx-ws.conf: |
     server {
