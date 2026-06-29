@@ -54,6 +54,8 @@ spec:
               value: emqx-test-headless.emqx.svc.cluster.local
             - name: EMQX_RPC__PORT_DISCOVERY
               value: stateless
+            - name: EMQX_NODE__COOKIE
+              value: emqx-k8s-test-cluster
           ports:
             - containerPort: 1883
               name: mqtt

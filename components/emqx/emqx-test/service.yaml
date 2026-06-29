@@ -36,19 +36,19 @@ spec:
     - name: mqtt
       port: 1883
       targetPort: 1883
-      nodePort: 32883
+      nodePort: 31884
     - name: dashboard
       port: 18083
       targetPort: 18083
-      nodePort: 32083
+      nodePort: 31084
     - name: ws
       port: 8083
       targetPort: 8083
-      nodePort: 32884
+      nodePort: 30885
     - name: wss
       port: 8084
       targetPort: 8084
-      nodePort: 32885
+      nodePort: 30886
   selector:
     app: emqx
     cluster: k8s-test
