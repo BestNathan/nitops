@@ -17,16 +17,23 @@ data:
 
     processors:
       batch:
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        timeout: 5s
       memory_limiter:
         check_interval: 5s
-        limit_mib: 400
-        spike_limit_mib: 100
+        limit_mib: 800
+        spike_limit_mib: 200
 
     exporters:
       otlphttp/tempo:
         endpoint: "http://tempo:4318"
+        sending_queue:
+          queue_size: 1000
       otlphttp/loki:
         endpoint: "http://loki:3100/otlp"
+        sending_queue:
+          queue_size: 1000
       prometheus:
         endpoint: "0.0.0.0:8889"
         namespace: otel
