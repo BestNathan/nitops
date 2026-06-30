@@ -1,0 +1,375 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-tdengine
+  namespace: observability
+  labels:
+    app: grafana
+data:
+  tdengine.yaml: |
+    apiVersion: 1
+    providers:
+      - name: TDengine
+        folder: TDengine
+        type: file
+        updateIntervalSeconds: 30
+        options:
+          path: /etc/grafana/provisioning/dashboards/tdengine
+  tdengine-cluster.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 100,
+          "title": "Cluster Overview",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+          "id": 1,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT last_row(dnodes_alive) as alive, last_row(dnodes_total) as total FROM taoskeeper_dev.taosd_cluster_info WHERE ts >= $from AND ts <= $to",
+              "refId": "A",
+              "format": "table"
+            }
+          ],
+          "title": "DNodes Alive/Total",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+          "id": 2,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT last_row(vnodes_alive) as alive, last_row(vnodes_total) as total FROM taoskeeper_dev.taosd_cluster_info WHERE ts >= $from AND ts <= $to",
+              "refId": "A",
+              "format": "table"
+            }
+          ],
+          "title": "VNodes Alive/Total",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [],
+              "noValue": "0",
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+          "id": 3,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT last_row(connections_total) as conns FROM taoskeeper_dev.taosd_cluster_info WHERE ts >= $from AND ts <= $to",
+              "refId": "A",
+              "format": "table"
+            }
+          ],
+          "title": "Connections",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [],
+              "noValue": "-",
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+          "id": 4,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT last_row(cluster_version) as version FROM taoskeeper_dev.taosd_cluster_basic WHERE ts >= $from AND ts <= $to",
+              "refId": "A",
+              "format": "table"
+            }
+          ],
+          "title": "Version",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT last_row(dbs_total) as dbs, last_row(tbs_total) as tables, last_row(stbs_total) as stables FROM taoskeeper_dev.taosd_cluster_info WHERE ts >= $from AND ts <= $to",
+              "refId": "A",
+              "format": "table"
+            }
+          ],
+          "title": "DBs / Tables / STables",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+          "id": 200,
+          "title": "DNode Resources",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 20, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "percentunit"
+            }
+          },
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 6 },
+          "id": 201,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT ts, cpu_engine FROM taoskeeper_dev.taosd_dnodes_info WHERE ts >= $from AND ts <= $to",
+              "refId": "A",
+              "alias": "$tags(dnode_ep)"
+            }
+          ],
+          "title": "CPU Usage",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 20, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "decbytes"
+            }
+          },
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 6 },
+          "id": 202,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT ts, mem_engine FROM taoskeeper_dev.taosd_dnodes_info WHERE ts >= $from AND ts <= $to",
+              "refId": "A",
+              "alias": "$tags(dnode_ep)"
+            }
+          ],
+          "title": "Memory Usage (engine)",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 20, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "decbytes"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+          "id": 203,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            { "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" }, "rawSql": "SELECT ts, disk_total FROM taoskeeper_dev.taosd_dnodes_info WHERE ts >= $from AND ts <= $to", "refId": "A", "alias": "$tags(dnode_ep) total" },
+            { "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" }, "rawSql": "SELECT ts, disk_used FROM taoskeeper_dev.taosd_dnodes_info WHERE ts >= $from AND ts <= $to", "refId": "B", "alias": "$tags(dnode_ep) used" }
+          ],
+          "title": "Disk Total vs Used",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 20, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "decbytes"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+          "id": 204,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            { "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" }, "rawSql": "SELECT ts, io_read FROM taoskeeper_dev.taosd_dnodes_info WHERE ts >= $from AND ts <= $to", "refId": "A", "alias": "$tags(dnode_ep) read" },
+            { "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" }, "rawSql": "SELECT ts, io_write FROM taoskeeper_dev.taosd_dnodes_info WHERE ts >= $from AND ts <= $to", "refId": "B", "alias": "$tags(dnode_ep) write" }
+          ],
+          "title": "Disk IO",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 20, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "decbytes"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+          "id": 205,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            { "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" }, "rawSql": "SELECT ts, system_net_in FROM taoskeeper_dev.taosd_dnodes_info WHERE ts >= $from AND ts <= $to", "refId": "A", "alias": "$tags(dnode_ep) net_in" },
+            { "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" }, "rawSql": "SELECT ts, system_net_out FROM taoskeeper_dev.taosd_dnodes_info WHERE ts >= $from AND ts <= $to", "refId": "B", "alias": "$tags(dnode_ep) net_out" }
+          ],
+          "title": "Network I/O",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+          "id": 300,
+          "title": "SQL Performance",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 20, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+          "id": 301,
+          "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT ts, count FROM taoskeeper_dev.taosd_sql_req WHERE ts >= $from AND ts <= $to",
+              "refId": "A",
+              "alias": "$tags(sql_type)"
+            }
+          ],
+          "title": "SQL Request Count",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "custom": { "align": "auto" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
+          "id": 302,
+          "options": { "cellHeight": "sm", "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false } },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT ts, username, result, duration, count FROM taoskeeper_dev.taos_slow_sql WHERE ts >= $from AND ts <= $to ORDER BY duration DESC LIMIT 20",
+              "refId": "A",
+              "format": "table"
+            }
+          ],
+          "title": "Slow Queries (Top 20)",
+          "type": "table"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 33 },
+          "id": 400,
+          "title": "Storage & VGroups",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 20, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "decbytes"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 34 },
+          "id": 401,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            { "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" }, "rawSql": "SELECT ts, used FROM taoskeeper_dev.taosd_dnodes_data_dirs WHERE ts >= $from AND ts <= $to", "refId": "A", "alias": "$tags(data_dir_name)" }
+          ],
+          "title": "Data Directory Usage per Node",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "custom": { "align": "auto" }
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 34 },
+          "id": 402,
+          "options": { "cellHeight": "sm" },
+          "targets": [
+            {
+              "datasource": { "type": "tdengine-datasource", "uid": "tdengine-dev" },
+              "rawSql": "SELECT database_name, vgroup_id, tables_num, status FROM taoskeeper_dev.taosd_vgroups_info WHERE ts >= $from AND ts <= $to",
+              "refId": "A",
+              "format": "table"
+            }
+          ],
+          "title": "VGroups Status",
+          "type": "table"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["tdengine", "cluster"],
+      "time": { "from": "now-6h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "TDengine Cluster",
+      "uid": "tdengine-cluster",
+      "version": 1
+    }

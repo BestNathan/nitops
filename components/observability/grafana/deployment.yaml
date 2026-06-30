@@ -15,6 +15,26 @@ spec:
       labels:
         app: grafana
     spec:
+      initContainers:
+        - name: install-tdengine-plugin
+          image: tdengine/tdengine:3.3.6.13
+          command:
+            - sh
+            - -c
+            - |
+              PLUGIN_DIR=/var/lib/grafana/plugins/tdengine-datasource
+              if [ -f "$PLUGIN_DIR/plugin.json" ]; then
+                echo "TDengine plugin already installed, skipping"
+                exit 0
+              fi
+              echo "Installing TDengine Grafana plugin..."
+              mkdir -p "$PLUGIN_DIR"
+              unzip -qo /usr/local/taos/bin/tdengine-datasource.zip -d "$PLUGIN_DIR"
+              echo "Plugin installed to $PLUGIN_DIR"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/grafana
+              subPath: grafana
       containers:
         - name: grafana
           image: grafana/grafana-enterprise:13.1.0-25196703233
@@ -24,12 +44,16 @@ spec:
           env:
             - name: JAEGER_AGENT_PORT
               value: ""
+            - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
+              value: "tdengine-datasource"
           volumeMounts:
             - name: data
               mountPath: /var/lib/grafana
               subPath: grafana
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboards-tdengine
+              mountPath: /etc/grafana/provisioning/dashboards/tdengine
           resources:
             requests:
               memory: "256Mi"
@@ -44,3 +68,6 @@ spec:
         - name: datasources
           configMap:
             name: grafana-datasources
+        - name: dashboards-tdengine
+          configMap:
+            name: grafana-dashboards-tdengine
