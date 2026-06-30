@@ -16,8 +16,19 @@ spec:
         app: grafana
     spec:
       initContainers:
-        - name: install-tdengine-plugin
+        - name: copy-tdengine-plugin
           image: tdengine/tdengine:3.3.6.13
+          command:
+            - sh
+            - -c
+            - |
+              cp /usr/local/taos/bin/tdengine-datasource.zip /tmp/plugins/tdengine-datasource.zip
+              echo "TDengine plugin zip copied"
+          volumeMounts:
+            - name: plugins-tmp
+              mountPath: /tmp/plugins
+        - name: extract-plugin
+          image: busybox:stable
           command:
             - sh
             - -c
@@ -27,11 +38,13 @@ spec:
                 echo "TDengine plugin already installed, skipping"
                 exit 0
               fi
-              echo "Installing TDengine Grafana plugin..."
+              echo "Extracting TDengine Grafana plugin..."
               mkdir -p "$PLUGIN_DIR"
-              unzip -qo /usr/local/taos/bin/tdengine-datasource.zip -d "$PLUGIN_DIR"
+              unzip -qo /tmp/plugins/tdengine-datasource.zip -d "$PLUGIN_DIR"
               echo "Plugin installed to $PLUGIN_DIR"
           volumeMounts:
+            - name: plugins-tmp
+              mountPath: /tmp/plugins
             - name: data
               mountPath: /var/lib/grafana
               subPath: grafana
@@ -71,3 +84,5 @@ spec:
         - name: dashboards-tdengine
           configMap:
             name: grafana-dashboards-tdengine
+        - name: plugins-tmp
+          emptyDir: {}
