@@ -9,14 +9,7 @@ metadata:
 spec:
   externalTrafficPolicy: Cluster
   ports:
-    -
-      name: tcp-rest
-      nodePort: 30071
-      port: 6041
-      protocol: TCP
-      targetPort: 6041
-    -
-      name: udp-native
+    - name: udp-native
       nodePort: 30074
       port: 6044
       protocol: UDP

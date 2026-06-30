@@ -4,6 +4,7 @@ resources:
   - namespace/namespace.yaml
   - namespace/pv.yaml
   - namespace/pvc.yaml
+  - ingress.yaml
   - dev/statefulset.yaml
   - dev/adapter-deployment.yaml
   - dev/adapter-service.yaml

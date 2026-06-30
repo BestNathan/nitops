@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tdengine-dev-rest
+  namespace: tdengine
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    higress.io/domain: "tdengine-dev.nhome.local"
+spec:
+  ingressClassName: higress
+  rules:
+    - host: tdengine-dev.nhome.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: tdengine-dev-adapter
+                port:
+                  number: 6041
+            path: /
+            pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tdengine-prod-rest
+  namespace: tdengine
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    higress.io/domain: "tdengine-prod.nhome.local"
+spec:
+  ingressClassName: higress
+  rules:
+    - host: tdengine-prod.nhome.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: tdengine-prod-adapter
+                port:
+                  number: 6041
+            path: /
+            pathType: Prefix
