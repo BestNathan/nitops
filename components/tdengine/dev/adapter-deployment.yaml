@@ -44,7 +44,7 @@ spec:
               value: "false"
             -
               name: TAOS_ADAPTER_UPLOAD_KEEPER_URL
-              value: "http://taoskeeper-monitor.tdengine.svc.cluster.local:6043/adapter_report"
+              value: "http://taoskeeper-dev.tdengine.svc.cluster.local:6043/adapter_report"
           image: tdengine/tdengine:3.3.6.13
           imagePullPolicy: IfNotPresent
           name: taosadapter

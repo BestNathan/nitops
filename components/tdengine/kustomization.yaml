@@ -10,6 +10,8 @@ resources:
   - dev/adapter-deployment.yaml
   - dev/adapter-service.yaml
   - dev/headless-service.yaml
+  - dev/taoskeeper-deployment.yaml
+  - dev/taoskeeper-service.yaml
   - dev/nginx-deployment.yaml
   - dev/nginx-service.yaml
   - dev/nginx-configmap.yaml
@@ -18,10 +20,10 @@ resources:
   - prod/adapter-deployment.yaml
   - prod/adapter-service.yaml
   - prod/headless-service.yaml
+  - prod/taoskeeper-deployment.yaml
+  - prod/taoskeeper-service.yaml
   - prod/nginx-deployment.yaml
   - prod/nginx-service.yaml
   - prod/nginx-configmap.yaml
   - monitor/statefulset.yaml
   - monitor/headless-service.yaml
-  - monitor/taoskeeper-deployment.yaml
-  - monitor/taoskeeper-service.yaml
