@@ -42,14 +42,12 @@ spec:
               cpu: 500m
               memory: 256Mi
           livenessProbe:
-            httpGet:
-              path: /-/ping
+            tcpSocket:
               port: 6043
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 30
           readinessProbe:
-            httpGet:
-              path: /-/ping
+            tcpSocket:
               port: 6043
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 10
