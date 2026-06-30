@@ -32,9 +32,9 @@ data:
           - source_labels: [__meta_kubernetes_pod_label_cluster]
             action: keep
             regex: emqx-prod
-          - source_labels: [__meta_kubernetes_pod_ip]
+          - source_labels: [__meta_kubernetes_pod_name]
             target_label: __address__
-            replacement: "${1}:18083"
+            replacement: "${1}.emqx-prod-headless.emqx.svc.cluster.local:18083"
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: instance
           - source_labels: [__meta_kubernetes_pod_label_cluster]
@@ -53,9 +53,9 @@ data:
           - source_labels: [__meta_kubernetes_pod_label_cluster]
             action: keep
             regex: k8s-prod
-          - source_labels: [__meta_kubernetes_pod_ip]
+          - source_labels: [__meta_kubernetes_pod_name]
             target_label: __address__
-            replacement: "${1}:18083"
+            replacement: "${1}.emqx-headless.emqx.svc.cluster.local:18083"
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: instance
           - source_labels: [__meta_kubernetes_pod_label_cluster]
