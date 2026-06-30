@@ -36,6 +36,8 @@ data:
         uid: tdengine-dev
         jsonData:
           user: root
+        secureJsonData:
+          url: http://tdengine-dev-adapter.tdengine.svc:6041
           password: taosdata
       - name: TDengine Prod
         type: tdengine-datasource
@@ -44,4 +46,6 @@ data:
         uid: tdengine-prod
         jsonData:
           user: root
+        secureJsonData:
+          url: http://tdengine-prod-adapter.tdengine.svc:6041
           password: taosdata
