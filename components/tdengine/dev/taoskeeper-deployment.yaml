@@ -28,7 +28,7 @@ spec:
             - name: TAOS_KEEPER_TDENGINE_PORT
               value: "6041"
             - name: TAOS_KEEPER_METRICS_DATABASE
-              value: "taoskeeper_dev"
+              value: "tdengine_dev"
             - name: TAOS_KEEPER_LOG_LEVEL
               value: "info"
           ports:
