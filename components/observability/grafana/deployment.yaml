@@ -67,8 +67,6 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources
             - name: dashboards-tdengine
               mountPath: /etc/grafana/provisioning/dashboards/tdengine
-            - name: dashboards-emqx
-              mountPath: /etc/grafana/provisioning/dashboards/emqx
           resources:
             requests:
               memory: "256Mi"
@@ -86,8 +84,5 @@ spec:
         - name: dashboards-tdengine
           configMap:
             name: grafana-dashboards-tdengine
-        - name: dashboards-emqx
-          configMap:
-            name: grafana-dashboards-emqx
         - name: plugins-tmp
           emptyDir: {}

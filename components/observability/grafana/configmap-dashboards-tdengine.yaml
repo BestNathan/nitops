@@ -373,3 +373,1196 @@ data:
       "uid": "tdengine-cluster",
       "version": 1
     }
+  emqx-overview.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["emqx", "mqtt"],
+      "time": { "from": "now-6h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "EMQX Overview",
+      "uid": "emqx-overview",
+      "version": 1,
+      "templating": {
+        "list": [
+          {
+            "name": "emqx_cluster",
+            "type": "query",
+            "datasource": "Prometheus",
+            "query": "label_values(emqx_connections_count, emqx_cluster)",
+            "multi": true,
+            "includeAll": true,
+            "allValue": ".+",
+            "current": { "text": "All", "value": "$__all" },
+            "refresh": 1,
+            "label": "Cluster"
+          },
+          {
+            "name": "instance",
+            "type": "query",
+            "datasource": "Prometheus",
+            "query": "label_values(emqx_connections_count{emqx_cluster=~\"$emqx_cluster\"}, instance)",
+            "multi": true,
+            "includeAll": true,
+            "allValue": ".+",
+            "current": { "text": "All", "value": "$__all" },
+            "refresh": 1,
+            "label": "Instance"
+          }
+        ]
+      },
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 100,
+          "title": "Overview",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 0, "y": 1 },
+          "id": 1,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum(emqx_connections_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Connections",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 3, "y": 1 },
+          "id": 2,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum(emqx_live_connections_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Live Connections",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 6, "y": 1 },
+          "id": 3,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum(emqx_sessions_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Sessions",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 9, "y": 1 },
+          "id": 4,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum(emqx_subscriptions_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Subscriptions",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 12, "y": 1 },
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum(emqx_topics_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Topics",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 15, "y": 1 },
+          "id": 6,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum(emqx_subscribers_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Subscribers",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 18, "y": 1 },
+          "id": 7,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum(emqx_retained_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Retained Messages",
+          "type": "stat"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "noValue": "0",
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 21, "y": 1 },
+          "id": 8,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum(emqx_cluster_nodes_running{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Nodes Running",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+          "id": 200,
+          "title": "Message Throughput",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 9, "w": 12, "x": 0, "y": 6 },
+          "id": 201,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} received"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} sent"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_publish{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} publish"
+            }
+          ],
+          "title": "Messages Rate (received / sent / publish)",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 9, "w": 12, "x": 12, "y": 6 },
+          "id": 202,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_dropped{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} total dropped"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_dropped_no_subscribers{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} no subscribers"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_dropped_expired{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} expired"
+            }
+          ],
+          "title": "Messages Dropped Rate",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+          "id": 203,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_delivered{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} delivered"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_acked{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} acked"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_forward{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} forwarded"
+            }
+          ],
+          "title": "Messages Delivered / Acked / Forwarded",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+          "id": 204,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_delivery_dropped{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} total"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_delivery_dropped_queue_full{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} queue full"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_delivery_dropped_expired{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} expired"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_delivery_dropped_too_large{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "D",
+              "legendFormat": "{{instance}} too large"
+            }
+          ],
+          "title": "Delivery Dropped (by reason)",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+          "id": 300,
+          "title": "MQTT Packet Flow",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+          "id": 301,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_connect{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} connect"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_disconnect_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} disconnect"
+            }
+          ],
+          "title": "Connect / Disconnect Rate",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+          "id": 302,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_publish_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} publish recv"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_publish_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} publish sent"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_publish_error{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} publish error"
+            }
+          ],
+          "title": "Publish Packet Rate",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+          "id": 303,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_subscribe_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} subscribe"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_unsubscribe_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} unsubscribe"
+            }
+          ],
+          "title": "Subscribe / Unsubscribe Rate",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+          "id": 304,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_pingreq_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} pingreq"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_puback_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} puback"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_connack_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} connack"
+            }
+          ],
+          "title": "Keepalive & ACK Packet Rate",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+          "id": 400,
+          "title": "Client Activity",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 41 },
+          "id": 401,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_client_connect{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} connect"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_client_disconnected{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} disconnected"
+            }
+          ],
+          "title": "Client Connect / Disconnect",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 41 },
+          "id": 402,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_client_subscribe{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} subscribe"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_client_unsubscribe{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} unsubscribe"
+            }
+          ],
+          "title": "Client Subscribe / Unsubscribe",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 10, "lineWidth": 1, "scaleDistribution": { "type": "linear" }, "stacking": { "mode": "normal" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 41 },
+          "id": 403,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (reason) (rate(emqx_client_disconnected_reason{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{reason}}"
+            }
+          ],
+          "title": "Disconnect Reasons",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 49 },
+          "id": 404,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_session_created{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} created"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_session_terminated{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} terminated"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_session_resumed{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} resumed"
+            }
+          ],
+          "title": "Session Lifecycle",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 57 },
+          "id": 500,
+          "title": "QoS Distribution",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 58 },
+          "id": 501,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_qos0_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} QoS 0"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_qos1_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} QoS 1"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_qos2_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} QoS 2"
+            }
+          ],
+          "title": "Messages Received by QoS",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 58 },
+          "id": 502,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_qos0_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} QoS 0"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_qos1_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} QoS 1"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_messages_qos2_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} QoS 2"
+            }
+          ],
+          "title": "Messages Sent by QoS",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 66 },
+          "id": 600,
+          "title": "Authentication & Authorization",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 67 },
+          "id": 601,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_authentication_success{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} success"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_authentication_failure{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} failure"
+            }
+          ],
+          "title": "Authentication Rate",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 67 },
+          "id": 602,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_authorization_allow{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} allow"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_authorization_deny{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} deny"
+            }
+          ],
+          "title": "Authorization Rate",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 75 },
+          "id": 603,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_authorization_cache_hit{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} hit"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_authorization_cache_miss{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} miss"
+            }
+          ],
+          "title": "Authorization Cache Hit / Miss",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 75 },
+          "id": 604,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_connack_error{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} connack error"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_connack_auth_error{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} connack auth error"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_publish_auth_error{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "{{instance}} publish auth error"
+            }
+          ],
+          "title": "Packet Errors (connack / publish)",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 83 },
+          "id": 700,
+          "title": "VM Resources",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "percent",
+              "min": 0,
+              "max": 100
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 84 },
+          "id": 701,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_vm_cpu_use{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "title": "CPU Usage %",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "decbytes"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 84 },
+          "id": 702,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_vm_used_memory{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}} used"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_vm_total_memory{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "B",
+              "legendFormat": "{{instance}} total"
+            }
+          ],
+          "title": "Memory Usage",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 84 },
+          "id": 703,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_vm_run_queue{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "title": "Erlang Run Queue",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 6, "w": 12, "x": 0, "y": 92 },
+          "id": 704,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_vm_cpu_idle{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "title": "CPU Idle %",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 6, "w": 12, "x": 12, "y": 92 },
+          "id": 705,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_vm_process_messages_in_queues{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "title": "Process Messages in Queues",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 98 },
+          "id": 800,
+          "title": "Cluster",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 99 },
+          "id": 801,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_cluster_nodes_running{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}} running"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_cluster_nodes_stopped{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "B",
+              "legendFormat": "{{instance}} stopped"
+            }
+          ],
+          "title": "Cluster Nodes",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "Bps"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 99 },
+          "id": 802,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_bytes_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} recv"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_bytes_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} sent"
+            }
+          ],
+          "title": "Bytes Rate",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 99 },
+          "id": 803,
+          "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "{{instance}} recv"
+            },
+            {
+              "datasource": "Prometheus",
+              "expr": "sum by (instance) (rate(emqx_packets_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "{{instance}} sent"
+            }
+          ],
+          "title": "Packets Rate",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 107 },
+          "id": 900,
+          "title": "Mria Database",
+          "type": "row"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 108 },
+          "id": 901,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_mria_last_intercepted_trans{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}} {{shard}}"
+            }
+          ],
+          "title": "Last Intercepted Transaction by Shard",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 108 },
+          "id": 902,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_mria_weight{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}} {{shard}}"
+            }
+          ],
+          "title": "Mria Weight by Shard",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 118 },
+          "id": 903,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_mria_replicants{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}} {{shard}}"
+            }
+          ],
+          "title": "Mria Replicants by Shard",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 118 },
+          "id": 904,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_mria_server_mql{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}} {{shard}}"
+            }
+          ],
+          "title": "Mria Message Queue Len",
+          "type": "timeseries"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "fillOpacity": 15, "lineWidth": 1, "scaleDistribution": { "type": "linear" } }
+            }
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 118 },
+          "id": 905,
+          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            {
+              "datasource": "Prometheus",
+              "expr": "emqx_conf_sync_txid{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
+              "refId": "A",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "title": "Config Sync Transaction ID",
+          "type": "timeseries"
+        }
+      ]
+    }
