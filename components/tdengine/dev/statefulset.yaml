@@ -20,7 +20,6 @@ spec:
   serviceName: tdengine-dev-headless
   template:
     metadata:
- 2026-06-21T00:04:25+08:00
       labels:
         app: tdengine-dev
         role: dnode
