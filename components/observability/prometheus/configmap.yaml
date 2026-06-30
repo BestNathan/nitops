@@ -60,15 +60,3 @@ data:
             target_label: instance
           - source_labels: [__meta_kubernetes_pod_label_cluster]
             target_label: emqx_cluster
-      - job_name: "tdengine-dev"
-        static_configs:
-          - targets:
-              - "tdengine-dev-adapter.tdengine.svc:6041"
-            labels:
-              tdengine_role: "adapter"
-      - job_name: "tdengine-prod"
-        static_configs:
-          - targets:
-              - "tdengine-prod-adapter.tdengine.svc:6041"
-            labels:
-              tdengine_role: "adapter"
