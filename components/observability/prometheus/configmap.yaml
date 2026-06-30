@@ -63,12 +63,12 @@ data:
       - job_name: "tdengine-dev"
         static_configs:
           - targets:
-              - "taoskeeper-dev.tdengine.svc:6043"
+              - "tdengine-dev-adapter.tdengine.svc:6041"
             labels:
-              tdengine_role: "taoskeeper"
+              tdengine_role: "adapter"
       - job_name: "tdengine-prod"
         static_configs:
           - targets:
-              - "taoskeeper-prod.tdengine.svc:6043"
+              - "tdengine-prod-adapter.tdengine.svc:6041"
             labels:
-              tdengine_role: "taoskeeper"
+              tdengine_role: "adapter"
