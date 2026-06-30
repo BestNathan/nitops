@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tdengine
+  namespace: argocd
+  labels:
+    app: tdengine
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/BestNathan/nitops.git
+    targetRevision: main
+    path: components/tdengine
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tdengine
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

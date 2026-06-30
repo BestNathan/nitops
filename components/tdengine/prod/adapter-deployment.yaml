@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: tdengine-prod
+    role: adapter
+  name: tdengine-prod-adapter
+  namespace: tdengine
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 4
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: tdengine-prod
+      role: adapter
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: tdengine-prod
+        role: adapter
+    spec:
+      containers:
+        -
+          command:
+            - taosadapter
+          env:
+            -
+              name: TAOS_FIRST_EP
+              value: tdengine-prod-0.tdengine-prod-headless.tdengine.svc.cluster.local:6030
+            -
+              name: TAOS_SECOND_EP
+              value: tdengine-prod-1.tdengine-prod-headless.tdengine.svc.cluster.local:6030
+            -
+              name: TAOS_SML_CHILD_TABLE_NAME
+              value: tname
+          image: tdengine/tdengine:3.3.6.13
+          imagePullPolicy: IfNotPresent
+          name: taosadapter
+          ports:
+            -
+              containerPort: 6041
+              name: tcp-rest
+              protocol: TCP
+            -
+              containerPort: 6044
+              name: udp-native
+              protocol: UDP
+          resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 200m
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30

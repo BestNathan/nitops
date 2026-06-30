@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace/namespace.yaml
+  - namespace/pv.yaml
+  - namespace/pvc.yaml
+  - dev/statefulset.yaml
+  - dev/adapter-deployment.yaml
+  - dev/adapter-service.yaml
+  - dev/headless-service.yaml
+  - dev/nginx-deployment.yaml
+  - dev/nginx-service.yaml
+  - dev/nginx-configmap.yaml
+  - prod/statefulset.yaml
+  - prod/adapter-deployment.yaml
+  - prod/adapter-service.yaml
+  - prod/headless-service.yaml
+  - prod/nginx-deployment.yaml
+  - prod/nginx-service.yaml
+  - prod/nginx-configmap.yaml

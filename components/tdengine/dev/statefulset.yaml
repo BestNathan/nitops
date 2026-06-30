@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: tdengine-dev
+    role: dnode
+  name: tdengine-dev
+  namespace: tdengine
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: tdengine-dev
+      role: dnode
+  serviceName: tdengine-dev-headless
+  template:
+    metadata:
+ 2026-06-21T00:04:25+08:00
+      labels:
+        app: tdengine-dev
+        role: dnode
+    spec:
+      containers:
+        -
+          env:
+            -
+              name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            -
+              name: TAOS_FQDN
+              value: $(POD_NAME).tdengine-dev-headless.tdengine.svc.cluster.local
+            -
+              name: TAOS_FIRST_EP
+              value: tdengine-dev-0.tdengine-dev-headless.tdengine.svc.cluster.local
+          image: tdengine/tdengine:3.2.3.0
+          imagePullPolicy: IfNotPresent
+          name: tdengine
+          resources:
+            limits:
+              cpu: 2
+              memory: 4Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            -
+              mountPath: /nfs-root
+              name: tdengine-data
+            -
+              mountPath: /var/lib/taos
+              name: taos-lib
+            -
+              mountPath: /var/log/taos
+              name: taos-log
+      dnsPolicy: ClusterFirst
+      initContainers:
+        -
+          args:
+            - "set -e\nPOD_ORDINAL=$(echo $POD_NAME | awk -F'-' '{print $NF}')\nTD_NUM=$((POD_ORDINAL + 1))\nCLUSTER=\"tdengine-dev\"\n\necho \"=== Init pod-$POD_ORDINAL -> td$TD_NUM ===\"\n\n# 1. \u5728 NFS \u4e0a\u521b\u5efa\u76ee\u5f55\u7ed3\u6784 - busybox sh \u4e0d\u652f\u6301 brace expansion!\nmkdir -p /nfs-root/k8s/${CLUSTER}/td${TD_NUM}/dnode\nmkdir -p /nfs-root/k8s/${CLUSTER}/td${TD_NUM}/mnode\nmkdir -p /nfs-root/k8s/${CLUSTER}/td${TD_NUM}/vnode\nmkdir -p /nfs-root/k8s/${CLUSTER}/log/td${TD_NUM}\n\n# 2. \u521b\u5efa\u8f6f\u94fe\u63a5\u5230 taos \u76ee\u5f55\nln -sf /nfs-root/k8s/${CLUSTER}/td${TD_NUM}/dnode /taos-lib/dnode\nln -sf /nfs-root/k8s/${CLUSTER}/td${TD_NUM}/mnode /taos-lib/mnode\nln -sf /nfs-root/k8s/${CLUSTER}/td${TD_NUM}/vnode /taos-lib/vnode\nln -sf /nfs-root/k8s/${CLUSTER}/log/td${TD_NUM} /taos-log\n\necho \"Created: /nfs-root/k8s/${CLUSTER}/td${TD_NUM}/\"\nls -la /taos-lib/ /taos-log/\n"
+          command:
+            - /bin/sh
+            - -c
+          env:
+            -
+              name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+          image: busybox:stable
+          imagePullPolicy: IfNotPresent
+          name: init-dirs
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            -
+              mountPath: /nfs-root
+              name: tdengine-data
+            -
+              mountPath: /taos-lib
+              name: taos-lib
+            -
+              mountPath: /taos-log
+              name: taos-log
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        -
+          name: tdengine-data
+          persistentVolumeClaim:
+            claimName: tdengine-nfs-root
+        -
+          emptyDir: {}
+          name: taos-lib
+        -
+          emptyDir: {}
+          name: taos-log
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+      partition: 0
+    type: RollingUpdate

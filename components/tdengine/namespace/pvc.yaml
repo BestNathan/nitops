@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: tdengine
+  name: tdengine-nfs-root
+  namespace: tdengine
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: nfs
+  volumeMode: Filesystem
+  volumeName: tdengine-nfs-root

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: tdengine-prod
+    role: dnode
+  name: tdengine-prod-headless
+  namespace: tdengine
+spec:
+  ports:
+    -
+      name: tcp-taos
+      port: 6030
+      protocol: TCP
+      targetPort: 6030
+  selector:
+    app: tdengine-prod
+    role: dnode
+  clusterIP: None
