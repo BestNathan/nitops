@@ -19,3 +19,7 @@ resources:
   - prod/nginx-deployment.yaml
   - prod/nginx-service.yaml
   - prod/nginx-configmap.yaml
+  - tk/dev-deployment.yaml
+  - tk/dev-service.yaml
+  - tk/prod-deployment.yaml
+  - tk/prod-service.yaml

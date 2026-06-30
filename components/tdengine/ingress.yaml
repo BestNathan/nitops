@@ -41,3 +41,47 @@ spec:
                   number: 6041
             path: /
             pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: taoskeeper-dev
+  namespace: tdengine
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    higress.io/domain: "tk-dev.nhome.local"
+spec:
+  ingressClassName: higress
+  rules:
+    - host: tk-dev.nhome.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: taoskeeper-dev
+                port:
+                  number: 6043
+            path: /
+            pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: taoskeeper-prod
+  namespace: tdengine
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    higress.io/domain: "tk-prod.nhome.local"
+spec:
+  ingressClassName: higress
+  rules:
+    - host: tk-prod.nhome.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: taoskeeper-prod
+                port:
+                  number: 6043
+            path: /
+            pathType: Prefix

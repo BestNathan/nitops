@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taoskeeper-prod
+  namespace: tdengine
+  labels:
+    app: tdengine-prod
+    role: taoskeeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tdengine-prod
+      role: taoskeeper
+  template:
+    metadata:
+      labels:
+        app: tdengine-prod
+        role: taoskeeper
+    spec:
+      containers:
+        - name: taoskeeper
+          image: tdengine/tdengine:3.2.3.0
+          command: ["taoskeeper"]
+          env:
+            - name: TAOS_KEEPER_TDENGINE_HOST
+              value: "tdengine-prod-adapter.tdengine.svc.cluster.local"
+            - name: TAOS_KEEPER_TDENGINE_PORT
+              value: "6041"
+            - name: TAOS_KEEPER_METRICS_DATABASE
+              value: "taoskeeper_prod"
+            - name: TAOS_KEEPER_LOG_LEVEL
+              value: "info"
+          ports:
+            - containerPort: 6043
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /-/ping
+              port: 6043
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /-/ping
+              port: 6043
+            initialDelaySeconds: 5
+            periodSeconds: 10
