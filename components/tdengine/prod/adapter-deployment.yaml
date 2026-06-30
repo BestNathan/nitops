@@ -39,6 +39,12 @@ spec:
             -
               name: TAOS_SML_CHILD_TABLE_NAME
               value: tname
+            -
+              name: TAOS_ADAPTER_MONITOR_DISABLE
+              value: "false"
+            -
+              name: TAOS_ADAPTER_UPLOAD_KEEPER_URL
+              value: "http://taoskeeper-prod.tdengine.svc.cluster.local:6043/adapter_report"
           image: tdengine/tdengine:3.3.6.13
           imagePullPolicy: IfNotPresent
           name: taosadapter

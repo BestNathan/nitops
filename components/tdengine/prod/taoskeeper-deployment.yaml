@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: taoskeeper
-          image: tdengine/tdengine:3.2.3.0
+          image: tdengine/tdengine:3.3.6.13
           command: ["taoskeeper"]
           env:
             - name: TAOS_KEEPER_TDENGINE_HOST

@@ -5,6 +5,7 @@ resources:
   - namespace/pv.yaml
   - namespace/pvc.yaml
   - ingress.yaml
+  - dev/taos-configmap.yaml
   - dev/statefulset.yaml
   - dev/adapter-deployment.yaml
   - dev/adapter-service.yaml
@@ -14,6 +15,7 @@ resources:
   - dev/nginx-configmap.yaml
   - dev/taoskeeper-deployment.yaml
   - dev/taoskeeper-service.yaml
+  - prod/taos-configmap.yaml
   - prod/statefulset.yaml
   - prod/adapter-deployment.yaml
   - prod/adapter-service.yaml
