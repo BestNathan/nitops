@@ -61,42 +61,26 @@ data:
           - source_labels: [__meta_kubernetes_pod_label_cluster]
             target_label: emqx_cluster
       - job_name: "tdengine-dev"
-        kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-                - tdengine
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_app]
-            action: keep
-            regex: tdengine-dev
-          - source_labels: [__meta_kubernetes_pod_label_role]
-            action: keep
-            regex: dnode|adapter
-          - source_labels: [__meta_kubernetes_pod_ip]
-            target_label: __address__
-            replacement: "${1}:6041"
-          - source_labels: [__meta_kubernetes_pod_name]
-            target_label: instance
-          - source_labels: [__meta_kubernetes_pod_label_role]
-            target_label: tdengine_role
+        static_configs:
+          - targets:
+              - "tdengine-dev-0.tdengine-dev-headless.tdengine.svc:6041"
+              - "tdengine-dev-1.tdengine-dev-headless.tdengine.svc:6041"
+              - "tdengine-dev-2.tdengine-dev-headless.tdengine.svc:6041"
+            labels:
+              tdengine_role: "dnode"
+          - targets:
+              - "tdengine-dev-adapter.tdengine.svc:6041"
+            labels:
+              tdengine_role: "adapter"
       - job_name: "tdengine-prod"
-        kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-                - tdengine
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_app]
-            action: keep
-            regex: tdengine-prod
-          - source_labels: [__meta_kubernetes_pod_label_role]
-            action: keep
-            regex: dnode|adapter
-          - source_labels: [__meta_kubernetes_pod_ip]
-            target_label: __address__
-            replacement: "${1}:6041"
-          - source_labels: [__meta_kubernetes_pod_name]
-            target_label: instance
-          - source_labels: [__meta_kubernetes_pod_label_role]
-            target_label: tdengine_role
+        static_configs:
+          - targets:
+              - "tdengine-prod-0.tdengine-prod-headless.tdengine.svc:6041"
+              - "tdengine-prod-1.tdengine-prod-headless.tdengine.svc:6041"
+              - "tdengine-prod-2.tdengine-prod-headless.tdengine.svc:6041"
+            labels:
+              tdengine_role: "dnode"
+          - targets:
+              - "tdengine-prod-adapter.tdengine.svc:6041"
+            labels:
+              tdengine_role: "adapter"
