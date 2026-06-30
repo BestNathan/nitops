@@ -39,7 +39,7 @@ spec:
             -
               name: TAOS_SML_CHILD_TABLE_NAME
               value: tname
-          image: tdengine/tdengine:3.2.3.0
+          image: tdengine/tdengine:3.3.6.13
           imagePullPolicy: IfNotPresent
           name: taosadapter
           ports:

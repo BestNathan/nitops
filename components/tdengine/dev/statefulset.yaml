@@ -39,7 +39,7 @@ spec:
             -
               name: TAOS_FIRST_EP
               value: tdengine-dev-0.tdengine-dev-headless.tdengine.svc.cluster.local
-          image: tdengine/tdengine:3.2.3.0
+          image: tdengine/tdengine:3.3.6.13
           imagePullPolicy: IfNotPresent
           name: tdengine
           resources:
