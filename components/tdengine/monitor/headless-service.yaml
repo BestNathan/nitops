@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tdengine-monitor-headless
+  namespace: tdengine
+  labels:
+    app: tdengine-monitor
+    role: dnode
+spec:
+  clusterIP: None
+  ports:
+    - name: taos
+      port: 6030
+      targetPort: 6030
+    - name: rest
+      port: 6041
+      targetPort: 6041
+  selector:
+    app: tdengine-monitor
+    role: dnode
+  type: ClusterIP

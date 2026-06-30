@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: taoskeeper-prod
+  name: taoskeeper-monitor
   namespace: tdengine
   labels:
-    app: tdengine-prod
+    app: tdengine-monitor
     role: taoskeeper
 spec:
   ports:
@@ -12,6 +12,6 @@ spec:
       port: 6043
       targetPort: 6043
   selector:
-    app: tdengine-prod
+    app: tdengine-monitor
     role: taoskeeper
   type: ClusterIP

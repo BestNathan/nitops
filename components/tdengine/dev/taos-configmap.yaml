@@ -192,7 +192,7 @@ data:
     # generate core file when service crash
     # enableCoreFile            1
     monitor 1
-    monitorFQDN taoskeeper-dev.tdengine.svc.cluster.local
+    monitorFQDN taoskeeper-monitor.tdengine.svc.cluster.local
     audit 1
 kind: ConfigMap
 metadata:

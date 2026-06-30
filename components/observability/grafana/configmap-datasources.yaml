@@ -29,25 +29,14 @@ data:
         access: proxy
         url: http://tempo:3200
         uid: tempo
-      - name: TDengine Dev
+      - name: TDengine Monitor
         type: tdengine-datasource
         access: proxy
-        url: http://tdengine-dev-adapter.tdengine.svc:6041
-        uid: tdengine-dev
+        url: http://tdengine-monitor-headless.tdengine.svc:6041
+        uid: tdengine-monitor
         jsonData:
           user: root
         secureJsonData:
-          url: http://tdengine-dev-adapter.tdengine.svc:6041
-          password: taosdata
-          basicAuth: cm9vdDp0YW9zZGF0YQ==
-      - name: TDengine Prod
-        type: tdengine-datasource
-        access: proxy
-        url: http://tdengine-prod-adapter.tdengine.svc:6041
-        uid: tdengine-prod
-        jsonData:
-          user: root
-        secureJsonData:
-          url: http://tdengine-prod-adapter.tdengine.svc:6041
+          url: http://tdengine-monitor-headless.tdengine.svc:6041
           password: taosdata
           basicAuth: cm9vdDp0YW9zZGF0YQ==

@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: taoskeeper-prod
+  name: taoskeeper-monitor
   namespace: tdengine
   labels:
-    app: tdengine-prod
+    app: tdengine-monitor
     role: taoskeeper
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: tdengine-prod
+      app: tdengine-monitor
       role: taoskeeper
   template:
     metadata:
       labels:
-        app: tdengine-prod
+        app: tdengine-monitor
         role: taoskeeper
     spec:
       containers:
@@ -24,11 +24,11 @@ spec:
           command: ["taoskeeper"]
           env:
             - name: TAOS_KEEPER_TDENGINE_HOST
-              value: "tdengine-prod-adapter.tdengine.svc.cluster.local"
+              value: "tdengine-monitor-headless.tdengine.svc.cluster.local"
             - name: TAOS_KEEPER_TDENGINE_PORT
               value: "6041"
             - name: TAOS_KEEPER_METRICS_DATABASE
-              value: "taoskeeper_prod"
+              value: "taoskeeper_monitor"
             - name: TAOS_KEEPER_LOG_LEVEL
               value: "info"
           ports:

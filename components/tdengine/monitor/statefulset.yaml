@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tdengine-monitor
+  namespace: tdengine
+  labels:
+    app: tdengine-monitor
+    role: dnode
+spec:
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: tdengine-monitor
+      role: dnode
+  serviceName: tdengine-monitor-headless
+  template:
+    metadata:
+      labels:
+        app: tdengine-monitor
+        role: dnode
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: tdengine
+          image: tdengine/tdengine:3.3.6.13
+          env:
+            - name: TAOS_FQDN
+              value: $(POD_NAME).tdengine-monitor-headless.tdengine.svc.cluster.local
+          ports:
+            - containerPort: 6030
+              name: taos
+            - containerPort: 6041
+              name: rest
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/taos
+            - name: log
+              mountPath: /var/log/taos
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: log
+          emptyDir: {}
