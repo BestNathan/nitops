@@ -61,28 +61,14 @@ data:
           - source_labels: [__meta_kubernetes_pod_label_cluster]
             target_label: emqx_cluster
       - job_name: "tdengine-dev"
-        enable_compression: false
         static_configs:
           - targets:
-              - "tdengine-dev-0.tdengine-dev-headless.tdengine.svc:6041"
-              - "tdengine-dev-1.tdengine-dev-headless.tdengine.svc:6041"
-              - "tdengine-dev-2.tdengine-dev-headless.tdengine.svc:6041"
+              - "taoskeeper-dev.tdengine.svc:6043"
             labels:
-              tdengine_role: "dnode"
-          - targets:
-              - "tdengine-dev-adapter.tdengine.svc:6041"
-            labels:
-              tdengine_role: "adapter"
+              tdengine_role: "taoskeeper"
       - job_name: "tdengine-prod"
-        enable_compression: false
         static_configs:
           - targets:
-              - "tdengine-prod-0.tdengine-prod-headless.tdengine.svc:6041"
-              - "tdengine-prod-1.tdengine-prod-headless.tdengine.svc:6041"
-              - "tdengine-prod-2.tdengine-prod-headless.tdengine.svc:6041"
+              - "taoskeeper-prod.tdengine.svc:6043"
             labels:
-              tdengine_role: "dnode"
-          - targets:
-              - "tdengine-prod-adapter.tdengine.svc:6041"
-            labels:
-              tdengine_role: "adapter"
+              tdengine_role: "taoskeeper"
