@@ -26,6 +26,10 @@ spec:
         - name: tdengine
           image: tdengine/tdengine:3.3.6.13
           env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: TAOS_FQDN
               value: $(POD_NAME).tdengine-monitor-headless.tdengine.svc.cluster.local
           ports:
@@ -47,6 +51,7 @@ spec:
               mountPath: /var/log/taos
       volumes:
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: tdengine-nfs-root
         - name: log
           emptyDir: {}
