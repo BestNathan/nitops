@@ -18,3 +18,45 @@ data:
       - job_name: "otel-collector"
         static_configs:
           - targets: ["otel-collector:8889"]
+      - job_name: "emqx-prod"
+        metrics_path: "/api/v5/prometheus/stats"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - emqx
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: emqx
+          - source_labels: [__meta_kubernetes_pod_label_cluster]
+            action: keep
+            regex: emqx-prod
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: "${1}:18083"
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: instance
+          - source_labels: [__meta_kubernetes_pod_label_cluster]
+            target_label: emqx_cluster
+      - job_name: "emqx-k8s-prod"
+        metrics_path: "/api/v5/prometheus/stats"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - emqx
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: emqx
+          - source_labels: [__meta_kubernetes_pod_label_cluster]
+            action: keep
+            regex: k8s-prod
+          - source_labels: [__meta_kubernetes_pod_ip]
+            target_label: __address__
+            replacement: "${1}:18083"
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: instance
+          - source_labels: [__meta_kubernetes_pod_label_cluster]
+            target_label: emqx_cluster
