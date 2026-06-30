@@ -34,24 +34,20 @@ data:
         access: proxy
         url: http://tdengine-dev-adapter.tdengine.svc:6041
         uid: tdengine-dev
-        basicAuth: true
-        basicAuthUser: root
         jsonData:
           user: root
         secureJsonData:
           url: http://tdengine-dev-adapter.tdengine.svc:6041
           password: taosdata
-          basicAuthPassword: taosdata
+          basicAuth: cm9vdDp0YW9zZGF0YQ==
       - name: TDengine Prod
         type: tdengine-datasource
         access: proxy
         url: http://tdengine-prod-adapter.tdengine.svc:6041
         uid: tdengine-prod
-        basicAuth: true
-        basicAuthUser: root
         jsonData:
           user: root
         secureJsonData:
           url: http://tdengine-prod-adapter.tdengine.svc:6041
           password: taosdata
-          basicAuthPassword: taosdata
+          basicAuth: cm9vdDp0YW9zZGF0YQ==
