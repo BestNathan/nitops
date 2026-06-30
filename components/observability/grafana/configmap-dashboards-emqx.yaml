@@ -35,7 +35,7 @@ data:
           {
             "name": "emqx_cluster",
             "type": "query",
-            "datasource": { "type": "prometheus", "uid": "Prometheus" },
+            "datasource": "Prometheus",
             "query": "label_values(emqx_connections_count, emqx_cluster)",
             "multi": true,
             "includeAll": true,
@@ -47,7 +47,7 @@ data:
           {
             "name": "instance",
             "type": "query",
-            "datasource": { "type": "prometheus", "uid": "Prometheus" },
+            "datasource": "Prometheus",
             "query": "label_values(emqx_connections_count{emqx_cluster=~\"$emqx_cluster\"}, instance)",
             "multi": true,
             "includeAll": true,
@@ -84,7 +84,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum(emqx_connections_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
               "refId": "A"
             }
@@ -110,7 +110,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum(emqx_live_connections_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
               "refId": "A"
             }
@@ -136,7 +136,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum(emqx_sessions_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
               "refId": "A"
             }
@@ -162,7 +162,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum(emqx_subscriptions_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
               "refId": "A"
             }
@@ -188,7 +188,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum(emqx_topics_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
               "refId": "A"
             }
@@ -214,7 +214,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum(emqx_subscribers_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
               "refId": "A"
             }
@@ -240,7 +240,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum(emqx_retained_count{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
               "refId": "A"
             }
@@ -267,7 +267,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum(emqx_cluster_nodes_running{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"})",
               "refId": "A"
             }
@@ -295,19 +295,19 @@ data:
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} received"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} sent"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_publish{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} publish"
@@ -329,19 +329,19 @@ data:
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_dropped{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} total dropped"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_dropped_no_subscribers{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} no subscribers"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_dropped_expired{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} expired"
@@ -363,19 +363,19 @@ data:
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_delivered{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} delivered"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_acked{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} acked"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_forward{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} forwarded"
@@ -397,25 +397,25 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_delivery_dropped{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} total"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_delivery_dropped_queue_full{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} queue full"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_delivery_dropped_expired{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} expired"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_delivery_dropped_too_large{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "D",
               "legendFormat": "{{instance}} too large"
@@ -444,13 +444,13 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_connect{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} connect"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_disconnect_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} disconnect"
@@ -472,19 +472,19 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_publish_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} publish recv"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_publish_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} publish sent"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_publish_error{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} publish error"
@@ -506,13 +506,13 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_subscribe_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} subscribe"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_unsubscribe_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} unsubscribe"
@@ -534,19 +534,19 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_pingreq_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} pingreq"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_puback_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} puback"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_connack_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} connack"
@@ -575,13 +575,13 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_client_connect{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} connect"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_client_disconnected{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} disconnected"
@@ -603,13 +603,13 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_client_subscribe{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} subscribe"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_client_unsubscribe{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} unsubscribe"
@@ -631,7 +631,7 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (reason) (rate(emqx_client_disconnected_reason{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{reason}}"
@@ -653,19 +653,19 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_session_created{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} created"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_session_terminated{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} terminated"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_session_resumed{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} resumed"
@@ -694,19 +694,19 @@ data:
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_qos0_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} QoS 0"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_qos1_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} QoS 1"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_qos2_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} QoS 2"
@@ -728,19 +728,19 @@ data:
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_qos0_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} QoS 0"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_qos1_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} QoS 1"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_messages_qos2_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} QoS 2"
@@ -769,13 +769,13 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_authentication_success{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} success"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_authentication_failure{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} failure"
@@ -797,13 +797,13 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_authorization_allow{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} allow"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_authorization_deny{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} deny"
@@ -825,13 +825,13 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_authorization_cache_hit{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} hit"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_authorization_cache_miss{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} miss"
@@ -853,19 +853,19 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_connack_error{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} connack error"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_connack_auth_error{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} connack auth error"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_publish_auth_error{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "C",
               "legendFormat": "{{instance}} publish auth error"
@@ -896,7 +896,7 @@ data:
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_vm_cpu_use{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}}"
@@ -918,13 +918,13 @@ data:
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_vm_used_memory{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}} used"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_vm_total_memory{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "B",
               "legendFormat": "{{instance}} total"
@@ -946,7 +946,7 @@ data:
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_vm_run_queue{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}}"
@@ -968,7 +968,7 @@ data:
           "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_vm_cpu_idle{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}}"
@@ -990,7 +990,7 @@ data:
           "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_vm_process_messages_in_queues{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}}"
@@ -1019,13 +1019,13 @@ data:
           "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_cluster_nodes_running{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}} running"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_cluster_nodes_stopped{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "B",
               "legendFormat": "{{instance}} stopped"
@@ -1047,13 +1047,13 @@ data:
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_bytes_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} recv"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_bytes_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} sent"
@@ -1075,13 +1075,13 @@ data:
           "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_received{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "A",
               "legendFormat": "{{instance}} recv"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "sum by (instance) (rate(emqx_packets_sent{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}[5m]))",
               "refId": "B",
               "legendFormat": "{{instance}} sent"
@@ -1110,7 +1110,7 @@ data:
           "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_mria_last_intercepted_trans{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}} {{shard}}"
@@ -1132,7 +1132,7 @@ data:
           "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_mria_weight{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}} {{shard}}"
@@ -1154,7 +1154,7 @@ data:
           "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_mria_replicants{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}} {{shard}}"
@@ -1176,7 +1176,7 @@ data:
           "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_mria_server_mql{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}} {{shard}}"
@@ -1197,7 +1197,7 @@ data:
           "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "Prometheus" },
+              "datasource": "Prometheus",
               "expr": "emqx_conf_sync_txid{emqx_cluster=~\"$emqx_cluster\", instance=~\"$instance\"}",
               "refId": "A",
               "legendFormat": "{{instance}}"
