@@ -9,15 +9,30 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    - name: mqtt
-      port: 1883
-      targetPort: 1883
-    - name: dashboard
-      port: 18083
-      targetPort: 18083
     - name: ekka
       port: 4370
       targetPort: 4370
+    - name: dashboard
+      port: 18083
+      targetPort: 18083
+  selector:
+    app: emqx
+    cluster: emqx-prod
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emqx-prod
+  namespace: emqx
+  labels:
+    app: emqx
+    cluster: emqx-prod
+spec:
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: 1883
   selector:
     app: emqx
     cluster: emqx-prod
