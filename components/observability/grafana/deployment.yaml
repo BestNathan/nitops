@@ -59,6 +59,8 @@ spec:
               value: ""
             - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
               value: "tdengine-datasource"
+            - name: GF_PLUGINS_PLUGIN_ADMIN_ENABLED
+              value: "false"
           volumeMounts:
             - name: data
               mountPath: /var/lib/grafana
@@ -69,10 +71,10 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards/tdengine
           resources:
             requests:
-              memory: "256Mi"
+              memory: "512Mi"
               cpu: "100m"
             limits:
-              memory: "512Mi"
+              memory: "1Gi"
               cpu: "250m"
       volumes:
         - name: data
