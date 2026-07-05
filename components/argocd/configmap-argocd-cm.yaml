@@ -1,6 +1,8 @@
 ---
 apiVersion: v1
 data:
+  timeout.hard.reconciliation: "60s"
+  timeout.reconciliation.jitter: "10s"
   resource.customizations.ignoreResourceUpdates.ConfigMap: |
     jqPathExpressions:
       # Ignore the cluster-autoscaler status
