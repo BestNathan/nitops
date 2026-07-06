@@ -42,6 +42,10 @@ spec:
       containers:
       - args:
         - "/usr/local/bin/argocd-application-controller"
+        - "--app-resync"
+        - "60"
+        - "--app-hard-resync"
+        - "60"
         env:
         - name: REDIS_PASSWORD
           valueFrom:

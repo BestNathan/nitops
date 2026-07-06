@@ -9,6 +9,7 @@ metadata:
   namespace: argocd
 data:
   server.insecure: "true"
+  application.resync.period: "60"
   reposerver.repo.cache.expiration: "3m"
   controller.status.processors: "20"
   controller.operation.processors: "10"
