@@ -10,4 +10,5 @@ metadata:
 data:
   server.insecure: "true"
   reposerver.repo.cache.expiration: "3m"
-  controller.self.heal.timeout.seconds: "30"
+  controller.status.processors: "20"
+  controller.operation.processors: "10"
