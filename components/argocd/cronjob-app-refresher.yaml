@@ -1,0 +1,56 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-app-refresher
+  namespace: argocd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argocd-app-refresher
+rules:
+- apiGroups: ["argoproj.io"]
+  resources: ["applications"]
+  verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-app-refresher
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argocd-app-refresher
+subjects:
+- kind: ServiceAccount
+  name: argocd-app-refresher
+  namespace: argocd
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: argocd-app-refresher
+  namespace: argocd
+spec:
+  schedule: "* * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 50
+      template:
+        spec:
+          serviceAccountName: argocd-app-refresher
+          restartPolicy: Never
+          containers:
+          - name: refresher
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              for app in $(kubectl -n argocd get applications -o name | cut -d/ -f2); do
+                kubectl -n argocd annotate app "$app" argocd.argoproj.io/refresh=hard --overwrite
+              done
+              echo "Refreshed all apps at $(date)"
