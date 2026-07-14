@@ -58,7 +58,7 @@ spec:
             - name: JAEGER_AGENT_PORT
               value: ""
             - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
-              value: "tdengine-datasource"
+              value: "tdengine-datasource,yesoreyeram-infinity-datasource"
             - name: GF_PLUGINS_PLUGIN_ADMIN_ENABLED
               value: "false"
           volumeMounts:
