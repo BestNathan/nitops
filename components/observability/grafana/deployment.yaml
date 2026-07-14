@@ -48,6 +48,52 @@ spec:
             - name: data
               mountPath: /var/lib/grafana
               subPath: grafana
+        - name: install-infinity-plugin
+          image: busybox:stable
+          command:
+            - sh
+            - -c
+            - |
+              ARCH=$(uname -m)
+              case "$ARCH" in
+                x86_64)  PLUGIN_ARCH=amd64 ;;
+                aarch64) PLUGIN_ARCH=arm64 ;;
+                *)       echo "ERROR: unsupported arch $ARCH"; exit 1 ;;
+              esac
+
+              PLUGIN_DIR=/var/lib/grafana/plugins/yesoreyeram-infinity-datasource
+              CACHE_DIR=/var/lib/grafana/plugin-cache
+              ZIP_FILE="infinity-${PLUGIN_ARCH}.zip"
+              ZIP_PATH="${CACHE_DIR}/${ZIP_FILE}"
+              BINARY="gpx_infinity_linux_${PLUGIN_ARCH}"
+
+              # Already installed for current arch? Skip
+              if [ -f "$PLUGIN_DIR/plugin.json" ] && [ -f "$PLUGIN_DIR/$BINARY" ]; then
+                echo "Infinity plugin (${PLUGIN_ARCH}) already installed, skipping"
+                exit 0
+              fi
+
+              echo "Infinity plugin needs install/update for arch ${PLUGIN_ARCH}"
+
+              # Download to NFS cache if not already cached
+              mkdir -p "$CACHE_DIR"
+              if [ ! -f "$ZIP_PATH" ]; then
+                URL="https://grafana.com/api/plugins/yesoreyeram-infinity-datasource/versions/3.10.1/download?os=linux&arch=${PLUGIN_ARCH}"
+                echo "Downloading Infinity plugin (${PLUGIN_ARCH}) to NFS cache..."
+                wget -q -O "$ZIP_PATH" "$URL"
+                echo "Cached: $ZIP_PATH"
+              else
+                echo "Using cached: $ZIP_PATH"
+              fi
+
+              # Extract from cache
+              mkdir -p "$PLUGIN_DIR"
+              unzip -qo "$ZIP_PATH" -d /var/lib/grafana/plugins/
+              echo "Infinity plugin (${PLUGIN_ARCH}) installed"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/grafana
+              subPath: grafana
       containers:
         - name: grafana
           image: grafana/grafana-enterprise:13.1.0-25196703233
