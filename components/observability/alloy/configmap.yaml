@@ -70,7 +70,8 @@ data:
     // Metrics: kubelet → Prometheus
     // ==============================================
     prometheus.scrape "kubelet" {
-        job_name   = "integrations/kubernetes/kubelet"
+        job_name          = "integrations/kubernetes/kubelet"
+        honor_timestamps  = false
         targets    = discovery.relabel.local_node.output
         scheme     = "https"
         metrics_path = "/metrics"
@@ -85,7 +86,8 @@ data:
     // Metrics: cAdvisor → Prometheus
     // ==============================================
     prometheus.scrape "cadvisor" {
-        job_name   = "integrations/kubernetes/cadvisor"
+        job_name          = "integrations/kubernetes/cadvisor"
+        honor_timestamps  = false
         targets    = discovery.relabel.local_node.output
         scheme     = "https"
         metrics_path = "/metrics/cadvisor"
