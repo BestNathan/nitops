@@ -14,15 +14,37 @@ data:
         role = "pod"
     }
 
+    // Filter pods to only this node (DaemonSet must only tail local logs)
+    discovery.relabel "local_pods" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+            action = "keep"
+            source_labels = ["__meta_kubernetes_pod_node_name"]
+            regex = sys.env("HOSTNAME")
+        }
+    }
+
     discovery.kubernetes "nodes" {
         role = "node"
+    }
+
+    // Filter to only this node for kubelet scrape
+    discovery.relabel "local_node" {
+        targets = discovery.kubernetes.nodes.targets
+
+        rule {
+            action = "keep"
+            source_labels = ["__meta_kubernetes_node_name"]
+            regex = sys.env("HOSTNAME")
+        }
     }
 
     // ==============================================
     // Logs: container logs → Loki
     // ==============================================
     loki.source.kubernetes "logs" {
-        targets = discovery.kubernetes.pods.targets
+        targets    = discovery.relabel.local_pods.output
         forward_to = [loki.write.default.receiver]
     }
 
@@ -37,7 +59,7 @@ data:
     // ==============================================
     prometheus.scrape "kubelet" {
         job_name   = "integrations/kubernetes/kubelet"
-        targets    = discovery.kubernetes.nodes.targets
+        targets    = discovery.relabel.local_node.output
         scheme     = "https"
         metrics_path = "/metrics"
         bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
@@ -52,7 +74,7 @@ data:
     // ==============================================
     prometheus.scrape "cadvisor" {
         job_name   = "integrations/kubernetes/cadvisor"
-        targets    = discovery.kubernetes.nodes.targets
+        targets    = discovery.relabel.local_node.output
         scheme     = "https"
         metrics_path = "/metrics/cadvisor"
         bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
