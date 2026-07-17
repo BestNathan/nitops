@@ -14,7 +14,7 @@ data:
         role = "pod"
     }
 
-    // Filter pods to only this node (DaemonSet must only tail local logs)
+    // Filter pods to only this node + add useful stream labels
     discovery.relabel "local_pods" {
         targets = discovery.kubernetes.pods.targets
 
@@ -22,6 +22,18 @@ data:
             action = "keep"
             source_labels = ["__meta_kubernetes_pod_node_name"]
             regex = sys.env("HOSTNAME")
+        }
+        rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label = "namespace"
+        }
+        rule {
+            source_labels = ["__meta_kubernetes_pod_label_app"]
+            target_label = "app"
+        }
+        rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label = "container"
         }
     }
 
