@@ -15,6 +15,17 @@ spec:
         app: alloy
     spec:
       serviceAccountName: alloy
+      initContainers:
+        - name: sysctl
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              sysctl -w fs.inotify.max_user_watches=524288
+              sysctl -w fs.inotify.max_user_instances=1024
+          securityContext:
+            privileged: true
       containers:
         - name: alloy
           image: grafana/alloy:latest
