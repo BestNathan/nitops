@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alloy
+  namespace: argocd
+  labels:
+    app: alloy
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/BestNathan/nitops.git
+    targetRevision: main
+    path: components/observability/alloy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
