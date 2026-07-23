@@ -34,18 +34,20 @@ metadata:
   namespace: argocd
 spec:
   schedule: "* * * * *"
+  concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
-      activeDeadlineSeconds: 50
+      activeDeadlineSeconds: 120
       template:
         spec:
           serviceAccountName: argocd-app-refresher
           restartPolicy: Never
           containers:
           - name: refresher
-            image: bitnami/kubectl:latest
+            image: bitnami/kubectl:1.32
+            imagePullPolicy: IfNotPresent
             command:
             - /bin/sh
             - -c
