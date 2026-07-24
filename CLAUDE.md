@@ -10,37 +10,42 @@ GitOps control plane for Kubernetes observability components, managed by ArgoCD.
 **Namespace:** `observability`
 **Tech:** Plain Kubernetes YAML manifests — no Helm, no Kustomize.
 
-## Cluster Nodes
+## Cluster Access
 
-All nodes on `192.168.2.0/24` subnet, root SSH with key auth:
+### Kubectl
 
-| Node | IP | Role | Arch | OS |
-|---|---|---|---|---|
-| `k8s-master` | `192.168.2.162` | control-plane | amd64 | Ubuntu 22.04 |
-| `k8s-worker1` | `192.168.2.86` | worker | amd64 | Ubuntu 22.04 |
-| `k8s-worker2` | `192.168.2.232` | worker | amd64 | Ubuntu 22.04 |
-| `rock-5b-plus` | `192.168.2.224` | worker | **arm64** (Rockchip) | Armbian 25.5 |
+Kubectl context is configured locally — run commands directly:
 
 ```sh
-ssh root@192.168.2.162   # k8s-master (control-plane)
-ssh root@192.168.2.86    # k8s-worker1
-ssh root@192.168.2.232   # k8s-worker2
-ssh root@192.168.2.224   # rock-5b-plus (ARM64!)
+kubectl get node -o wide   # list all nodes with IPs, roles, versions
 ```
 
-### ARM64 Node (`rock-5b-plus`) Caveats
+### SSH to Nodes
 
-- **Registry mirror:** containerd uses `http://192.168.2.106:5000` as mirror for `docker.io`. Node has **no public internet access** — all images must be available via the mirror or pre-cached.
+All cluster nodes are on the local network and accept root SSH with key auth:
+
+```sh
+# Discover node IPs then SSH:
+kubectl get node -o wide   # get INTERNAL-IP column
+ssh root@<node-ip>         # key auth, no password needed
+```
+
+The cluster has a mix of amd64 (Ubuntu) and arm64 (Armbian/Rockchip) nodes — check `kubectl get node -o wide` for arch info via OS-IMAGE column.
+
+### ARM64 Node Caveats
+
+One or more nodes may be ARM64 (Rockchip). On these nodes:
+- **Registry mirror:** containerd uses `http://192.168.2.106:5000` as mirror for `docker.io`. These nodes have **no public internet access** — all images must be available via the mirror or pre-cached.
 - **DNS fallback failure:** when the mirror doesn't have a tag, containerd falls back to `registry-1.docker.io` which fails DNS resolution (`no such host`). This causes pods to get stuck in `ContainerCreating` → eventually `Terminating`.
 - **Workaround:** use `@sha256:...` digest images for any image not explicitly cached by tag on the node.
-- **Image pull on ARM64 is slow/timeout-prone** — adjust `activeDeadlineSeconds` accordingly for CronJobs on this node.
-- **containerd version:** 1.7.28 (uses deprecated `mirrors` config, not `config_path`)
+- **Image pull on ARM64 is slow/timeout-prone** — adjust `activeDeadlineSeconds` accordingly for CronJobs targeting ARM64 nodes.
+- **containerd version:** 1.7.28 (uses deprecated `mirrors` config, not `config_path`). To inspect images on a node: `ssh root@<node-ip> crictl images` or `ssh root@<node-ip> ctr -n k8s.io image ls`.
 
 ### Registry Mirror
 
 ```
 http://192.168.2.106:5000    # docker.io mirror (registry cache)
-http://192.168.2.106:5002    # ghcr.io mirror  
+http://192.168.2.106:5002    # ghcr.io mirror
 http://192.168.2.106:5004    # quay.io mirror
 ```
 
