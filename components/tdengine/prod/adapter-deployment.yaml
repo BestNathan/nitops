@@ -49,11 +49,17 @@ spec:
               name: TAOS_ADAPTER_DEBUG
               value: "false"
             -
+              name: TAOS_DEBUG_FLAG
+              value: "131"
+            -
               name: TAOS_ADAPTER_LOG_LEVEL
               value: "info"
             -
               name: TAOS_ADAPTER_LOG_KEEP_DAYS
-              value: "3"
+              value: "1"
+            -
+              name: TAOS_ADAPTER_LOG_ROTATION_SIZE
+              value: "134217728"
           image: tdengine/tdengine:3.3.6.13
           imagePullPolicy: IfNotPresent
           name: taosadapter
@@ -75,6 +81,17 @@ spec:
               memory: 512Mi
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            -
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: tdengine-prod
+                    role: adapter
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
