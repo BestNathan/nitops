@@ -50,7 +50,7 @@ spec:
               value: "false"
             -
               name: TAOS_DEBUG_FLAG
-              value: "131"
+              value: "0"
             -
               name: TAOS_ADAPTER_LOG_LEVEL
               value: "info"
