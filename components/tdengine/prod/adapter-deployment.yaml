@@ -60,6 +60,15 @@ spec:
             -
               name: TAOS_ADAPTER_LOG_ROTATION_SIZE
               value: "134217728"
+            -
+              name: TAOS_SML_WORKER
+              value: "16"
+            -
+              name: TAOS_SML_BATCH_SIZE
+              value: "10000"
+            -
+              name: TAOS_SML_FLUSH_INTERVAL
+              value: "5s"
           image: tdengine/tdengine:3.3.6.13
           imagePullPolicy: IfNotPresent
           name: taosadapter
@@ -74,7 +83,7 @@ spec:
               protocol: UDP
           resources:
             limits:
-              cpu: 1
+              cpu: 2
               memory: 2Gi
             requests:
               cpu: 200m
