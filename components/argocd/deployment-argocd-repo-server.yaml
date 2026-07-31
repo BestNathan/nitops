@@ -45,9 +45,9 @@ spec:
         - "/usr/local/bin/argocd-repo-server"
         env:
         - name: HTTP_PROXY
-          value: http://192.168.2.98:7890
+          value: http://192.168.2.98:7895
         - name: HTTPS_PROXY
-          value: http://192.168.2.98:7890
+          value: http://192.168.2.98:7895
         - name: NO_PROXY
           value: localhost,127.0.0.1,.svc,.cluster.local,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
         - name: REDIS_PASSWORD
