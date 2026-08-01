@@ -46,7 +46,7 @@ spec:
           restartPolicy: Never
           containers:
           - name: refresher
-            image: bitnami/kubectl:1.32
+            image: bitnami/kubectl:latest
             imagePullPolicy: IfNotPresent
             command:
             - /bin/sh
