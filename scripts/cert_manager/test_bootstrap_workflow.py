@@ -1,5 +1,7 @@
 import base64
 import copy
+import io
+import json
 import os
 import re
 import shutil
@@ -8,6 +10,7 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -257,6 +260,88 @@ exec "$REAL_KUBESEAL" "$@"
         encoded_token = base64.b64encode(DUMMY_TOKEN.encode()).decode()
         self.assertNotIn(encoded_token, raw)
 
+    def test_inventory_uses_authenticated_zone_preflight(self):
+        document = load_workflow()
+        inventory = next(
+            step["run"]
+            for step in document["jobs"]["seal"]["steps"]
+            if step["name"]
+            == "Write sanitized DNS inventory and validate artifacts"
+        )
+        script = inline_python_blocks(inventory)[0]
+        calls = []
+        responses = {
+            "/user/tokens/verify": {
+                "success": True,
+                "result": {"status": "active"},
+            },
+            "/zones?name=bestnathan.top&status=active": {
+                "success": True,
+                "result": [{
+                    "id": "zone-id",
+                    "name": "bestnathan.top",
+                    "status": "active",
+                    "account": {"id": "account-id"},
+                }],
+            },
+            "/accounts/account-id/tokens/verify": {
+                "success": True,
+                "result": {"status": "active"},
+            },
+            "/zones/zone-id/dns_records?per_page=100&page=1": {
+                "success": True,
+                "result": [{
+                    "id": "record-id",
+                    "name": "mcp-nession.bestnathan.top",
+                    "type": "A",
+                    "content": "192.0.2.10",
+                }],
+                "result_info": {"total_pages": 1},
+            },
+        }
+
+        def fake_urlopen(request, timeout):
+            self.assertEqual(timeout, 20)
+            path = request.full_url.split("/client/v4", 1)[1]
+            calls.append(path)
+            return io.BytesIO(json.dumps(responses[path]).encode())
+
+        with tempfile.TemporaryDirectory() as workspace:
+            root = Path(workspace)
+            (root / "dist").mkdir()
+            (root / "dist/sealedsecret-cloudflare-api-token.yaml").write_text(
+                "kind: SealedSecret\n"
+                "spec:\n"
+                "  encryptedData:\n"
+                "    token: ciphertext\n"
+            )
+            previous_directory = Path.cwd()
+            try:
+                os.chdir(root)
+                with (
+                    mock.patch.dict(
+                        os.environ,
+                        {"CLOUDFLARE_API_TOKEN": DUMMY_TOKEN},
+                    ),
+                    mock.patch("urllib.request.urlopen", fake_urlopen),
+                    mock.patch("sys.stdout", new_callable=io.StringIO),
+                ):
+                    exec(compile(script, "workflow:inventory", "exec"), {})
+                records = json.loads(
+                    (root / "dist/cloudflare-records.json").read_text()
+                )
+            finally:
+                os.chdir(previous_directory)
+
+        self.assertEqual(calls, [
+            "/zones?name=bestnathan.top&status=active",
+            "/zones/zone-id/dns_records?per_page=100&page=1",
+        ])
+        self.assertEqual(records, [{
+            "name": "mcp-nession.bestnathan.top",
+            "type": "A",
+        }])
+
     def test_offline_tools_artifacts_and_sanitization(self):
         document = load_workflow()
         job = document["jobs"]["seal"]
@@ -274,7 +359,8 @@ exec "$REAL_KUBESEAL" "$@"
         self.assertIn("dist/sealedsecret-cloudflare-api-token.yaml", seal)
 
         inventory = steps["Write sanitized DNS inventory and validate artifacts"]["run"]
-        self.assertIn("/user/tokens/verify", inventory)
+        self.assertNotIn("tokens/verify", inventory)
+        self.assertIn('zones[0]["status"] != "active"', inventory)
         self.assertIn("result_info", inventory)
         self.assertIn('"name": record["name"], "type": record["type"]', inventory)
         self.assertNotIn('record["content"]', inventory)

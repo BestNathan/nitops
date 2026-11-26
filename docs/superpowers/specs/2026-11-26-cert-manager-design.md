@@ -169,7 +169,7 @@ components/observability/prometheus/
 
 ### 凭据
 
-- 经 Owner 批准复用 `BestNathan/nitops` 的 GitHub Actions Secret `CLOUDFLARE_API_TOKEN`。PR-0 合并评审必须确认其权限仅为 `bestnathan.top` Zone 的 `Zone Read + DNS Edit`；工作流验证 Token 状态和 Zone 读取，Staging 实际 DNS-01 验证 DNS 写入能力。不得把“能签发”单独表述为已证明最小权限。
+- 经 Owner 批准复用 `BestNathan/nitops` 的 GitHub Actions Secret `CLOUDFLARE_API_TOKEN`。PR-0 合并评审必须确认其权限仅为 `bestnathan.top` Zone 的 `Zone Read + DNS Edit`；现有凭据是 account-owned API Token，工作流与 Nession 一致，不调用 `/user/tokens/verify` 或其他独立 Token verify，而是通过已认证的 Zone GET 验证唯一的 active Zone 和读取权限，再分页读取 DNS records。该预检只证明实际读取权限，不声称单独验证 Token 元状态；Staging 实际 DNS-01 验证 DNS 写入能力。不得把“能签发”单独表述为已证明最小权限。
 - 不复用 Nession DNS 工作流凭据，不要求额外创建 CF 专用 ACME 凭据。
 - 新增 PR-0 受保护的 main-only `workflow_dispatch`：使用仓库中的 SealedSecrets **公开加密证书**在 GitHub Runner 内离线生成 SealedSecret，并输出仅含 DNS name/type 的基线。Artifact 保留 1 天；Token 仅注入密封和 DNS inventory 步骤，不进入 checkout、upload、日志、本机文件或 Git。签发后再次运行工作流取得新 DNS inventory，与基线比较。
 - Token 通过 PR-0 artifact 中的 SealedSecret 投递到 `cert-manager` Namespace，不在本机读取 GitHub Secret 原值。
