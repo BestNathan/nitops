@@ -14,6 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/seal-cert-manager-cloudflare.yml"
 PUBLIC_CERT = ROOT / "components/sealed-secrets/public-cert.pem"
+PLAN = ROOT / "docs/superpowers/plans/2026-11-26-cert-manager.md"
 CHECKOUT_SHA = "11bd71901bbe5b1630ceea73d27597364c9af683"
 UPLOAD_SHA = "ea165f8d65b6e75b540449e92b4886f43607fa02"
 KUBESEAL_SHA256 = "01069a5e79ed7702ba10bed42cd8132d94746ca288add06836d082b4202c2789"
@@ -127,6 +128,24 @@ class BootstrapWorkflowTests(unittest.TestCase):
         upload = next(step for step in job["steps"] if "uses" in step and step["uses"].startswith("actions/upload-artifact@"))
         self.assertEqual(upload["uses"], f"actions/upload-artifact@{UPLOAD_SHA}")
         self.assertEqual(upload["with"]["retention-days"], 1)
+
+    def test_dispatch_run_is_deterministically_selected(self):
+        document = load_workflow()
+        dispatch = document["on"]["workflow_dispatch"] or {}
+        bootstrap_id = dispatch.get("inputs", {}).get("bootstrap_id", {})
+        self.assertTrue(bootstrap_id.get("required"))
+        self.assertEqual(bootstrap_id.get("type"), "string")
+        self.assertEqual(
+            document.get("run-name"),
+            "Seal cert-manager Cloudflare bootstrap ${{ inputs.bootstrap_id }}",
+        )
+        section = PLAN.read_text().split(
+            "### Consume the PR-0 artifact", 1
+        )[1].split("## File map", 1)[0]
+        self.assertIn('-f bootstrap_id="$BOOTSTRAP_ID"', section)
+        self.assertIn('EXPECTED_TITLE="Seal cert-manager Cloudflare bootstrap $BOOTSTRAP_ID"', section)
+        self.assertNotRegex(section, r"--limit 1(?:\s|$)")
+        self.assertIn('ARTIFACT_NAME="cert-manager-cloudflare-$RUN_ID"', section)
 
     def test_secret_is_scoped_to_only_seal_and_inventory_steps(self):
         document = load_workflow()

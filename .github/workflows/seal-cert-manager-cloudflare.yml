@@ -1,7 +1,13 @@
 name: Seal cert-manager Cloudflare credential
+run-name: Seal cert-manager Cloudflare bootstrap ${{ inputs.bootstrap_id }}
 
 'on':
   workflow_dispatch:
+    inputs:
+      bootstrap_id:
+        description: Unique operator-generated ID used to select this exact run
+        required: true
+        type: string
 
 permissions:
   contents: read

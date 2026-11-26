@@ -52,11 +52,34 @@ The owner confirmed that the reusable credential is the GitHub Actions Secret `B
 After PR-0 merges, dispatch only from `main`:
 
 ```bash
-gh workflow run seal-cert-manager-cloudflare.yml --repo BestNathan/nitops --ref main
-RUN_ID=$(gh run list --repo BestNathan/nitops --workflow seal-cert-manager-cloudflare.yml --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId')
+set -euo pipefail
+BOOTSTRAP_ID=$(python3 -I -c 'import uuid; print(uuid.uuid4())')
+EXPECTED_TITLE="Seal cert-manager Cloudflare bootstrap $BOOTSTRAP_ID"
+gh workflow run seal-cert-manager-cloudflare.yml --repo BestNathan/nitops --ref main \
+  -f bootstrap_id="$BOOTSTRAP_ID"
+RUNS_JSON=$(mktemp /tmp/nitops-seal-runs.XXXXXX)
+for ATTEMPT in {1..30}; do
+  gh run list --repo BestNathan/nitops --workflow seal-cert-manager-cloudflare.yml \
+    --event workflow_dispatch --branch main --limit 100 \
+    --json databaseId,displayTitle > "$RUNS_JSON"
+  RUN_ID=$(python3 -I - "$RUNS_JSON" "$EXPECTED_TITLE" <<'PY'
+import json,sys
+from pathlib import Path
+runs=json.loads(Path(sys.argv[1]).read_text())
+matches=[run['databaseId'] for run in runs if run['displayTitle']==sys.argv[2]]
+if len(matches)>1:
+    raise RuntimeError('Duplicate bootstrap dispatch identifier')
+print(matches[0] if matches else '')
+PY
+)
+  if test -n "$RUN_ID"; then break; fi
+  sleep 2
+done
+test -n "$RUN_ID"
+rm -f "$RUNS_JSON"
 gh run watch "$RUN_ID" --repo BestNathan/nitops --exit-status
 ARTIFACT_DIR=$(mktemp -d /tmp/nitops-sealed-cloudflare.XXXXXX)
-ARTIFACT_NAME=$(gh run view "$RUN_ID" --repo BestNathan/nitops --json artifacts --jq '.artifacts[0].name')
+ARTIFACT_NAME="cert-manager-cloudflare-$RUN_ID"
 gh run download "$RUN_ID" --repo BestNathan/nitops --name "$ARTIFACT_NAME" --dir "$ARTIFACT_DIR"
 python3 -I - "$ARTIFACT_DIR" <<'PY'
 import json,sys,yaml
