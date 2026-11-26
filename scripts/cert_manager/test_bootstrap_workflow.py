@@ -260,7 +260,7 @@ exec "$REAL_KUBESEAL" "$@"
         encoded_token = base64.b64encode(DUMMY_TOKEN.encode()).decode()
         self.assertNotIn(encoded_token, raw)
 
-    def test_inventory_uses_zone_account_for_token_verification(self):
+    def test_inventory_uses_authenticated_zone_preflight(self):
         document = load_workflow()
         inventory = next(
             step["run"]
@@ -335,7 +335,6 @@ exec "$REAL_KUBESEAL" "$@"
 
         self.assertEqual(calls, [
             "/zones?name=bestnathan.top&status=active",
-            "/accounts/account-id/tokens/verify",
             "/zones/zone-id/dns_records?per_page=100&page=1",
         ])
         self.assertEqual(records, [{
@@ -360,9 +359,8 @@ exec "$REAL_KUBESEAL" "$@"
         self.assertIn("dist/sealedsecret-cloudflare-api-token.yaml", seal)
 
         inventory = steps["Write sanitized DNS inventory and validate artifacts"]["run"]
-        self.assertIn('account_id = zones[0]["account"]["id"]', inventory)
-        self.assertIn('get(f"/accounts/{account_id}/tokens/verify")', inventory)
-        self.assertNotIn("/user/tokens/verify", inventory)
+        self.assertNotIn("tokens/verify", inventory)
+        self.assertIn('zones[0]["status"] != "active"', inventory)
         self.assertIn("result_info", inventory)
         self.assertIn('"name": record["name"], "type": record["type"]', inventory)
         self.assertNotIn('record["content"]', inventory)

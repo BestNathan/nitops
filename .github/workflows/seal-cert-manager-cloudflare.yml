@@ -149,11 +149,6 @@ jobs:
           ):
               raise RuntimeError("Expected exactly one active bestnathan.top Zone")
           zone_id = zones[0]["id"]
-          account_id = zones[0]["account"]["id"]
-
-          verification = get(f"/accounts/{account_id}/tokens/verify")
-          if verification["result"].get("status") != "active":
-              raise RuntimeError("Cloudflare Token is not active")
 
           records = []
           page = 1
