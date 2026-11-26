@@ -1,0 +1,184 @@
+name: Seal cert-manager Cloudflare credential
+run-name: Seal cert-manager Cloudflare bootstrap ${{ inputs.bootstrap_id }}
+
+'on':
+  workflow_dispatch:
+    inputs:
+      bootstrap_id:
+        description: Unique operator-generated ID used to select this exact run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cert-manager-cloudflare-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  seal:
+    name: Offline seal and sanitized DNS inventory
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout reviewed public sealing certificate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Install verified kubeseal
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -I -c 'import yaml'
+          mkdir "$RUNNER_TEMP/downloads" "$RUNNER_TEMP/bin"
+          curl -fsSL \
+            https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.27.1/kubeseal-0.27.1-linux-amd64.tar.gz \
+            -o "$RUNNER_TEMP/downloads/kubeseal-0.27.1-linux-amd64.tar.gz"
+          printf '%s  %s\n' \
+            '01069a5e79ed7702ba10bed42cd8132d94746ca288add06836d082b4202c2789' \
+            "$RUNNER_TEMP/downloads/kubeseal-0.27.1-linux-amd64.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/downloads/kubeseal-0.27.1-linux-amd64.tar.gz" \
+            -C "$RUNNER_TEMP/bin" kubeseal
+          chmod 700 "$RUNNER_TEMP/bin/kubeseal"
+          "$RUNNER_TEMP/bin/kubeseal" --version
+
+      - name: Seal Cloudflare credential
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          mkdir -p dist
+          python3 -I - <<'PY' | "$RUNNER_TEMP/bin/kubeseal" \
+            --cert components/sealed-secrets/public-cert.pem \
+            --format yaml --scope strict \
+            > dist/sealedsecret-cloudflare-api-token.yaml
+          import base64
+          import json
+          import os
+          import sys
+
+          token = os.environ["CLOUDFLARE_API_TOKEN"]
+          document = {
+              "apiVersion": "v1",
+              "kind": "Secret",
+              "metadata": {
+                  "name": "cloudflare-api-token",
+                  "namespace": "cert-manager",
+              },
+              "type": "Opaque",
+              "data": {"token": base64.b64encode(token.encode()).decode()},
+          }
+          json.dump(document, sys.stdout)
+          PY
+          python3 -I - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          import yaml
+
+          token = os.environ["CLOUDFLARE_API_TOKEN"]
+          path = Path("dist/sealedsecret-cloudflare-api-token.yaml")
+          content = path.read_text()
+          document = yaml.safe_load(content)
+          if (
+              document.get("apiVersion") != "bitnami.com/v1alpha1"
+              or document.get("kind") != "SealedSecret"
+          ):
+              raise RuntimeError("Unexpected sealed artifact type")
+          metadata = document.get("metadata", {})
+          template = document.get("spec", {}).get("template", {})
+          for item in [metadata, template.get("metadata", {})]:
+              if (
+                  item.get("name") != "cloudflare-api-token"
+                  or item.get("namespace") != "cert-manager"
+              ):
+                  raise RuntimeError("SealedSecret Secret identity does not match")
+          encrypted = document.get("spec", {}).get("encryptedData", {})
+          if set(encrypted) != {"token"} or not encrypted["token"]:
+              raise RuntimeError("SealedSecret must contain only an encrypted token")
+          if "data" in document or "data" in template:
+              raise RuntimeError("SealedSecret contains unencrypted Secret data")
+          encoded_token = base64.b64encode(token.encode()).decode()
+          if token in content or encoded_token in content:
+              raise RuntimeError("Credential leaked into SealedSecret artifact")
+          PY
+
+      - name: Write sanitized DNS inventory and validate artifacts
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 -I - <<'PY'
+          import base64
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          token = os.environ["CLOUDFLARE_API_TOKEN"]
+          base_url = "https://api.cloudflare.com/client/v4"
+
+          def get(path):
+              request = urllib.request.Request(
+                  base_url + path,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/json",
+                      "User-Agent": "nitops-cert-manager-bootstrap",
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  document = json.load(response)
+              if not document.get("success"):
+                  raise RuntimeError("Cloudflare API request failed")
+              return document
+
+          verification = get("/user/tokens/verify")
+          if verification["result"].get("status") != "active":
+              raise RuntimeError("Cloudflare Token is not active")
+
+          zones = get("/zones?name=bestnathan.top&status=active")["result"]
+          if len(zones) != 1 or zones[0]["name"] != "bestnathan.top":
+              raise RuntimeError("Expected exactly one active bestnathan.top Zone")
+          zone_id = zones[0]["id"]
+
+          records = []
+          page = 1
+          while True:
+              query = urllib.parse.urlencode({"per_page": 100, "page": page})
+              document = get(f"/zones/{zone_id}/dns_records?{query}")
+              records.extend(
+                  {"name": record["name"], "type": record["type"]}
+                  for record in document["result"]
+              )
+              if page >= document["result_info"]["total_pages"]:
+                  break
+              page += 1
+
+          records.sort(key=lambda item: (item["name"], item["type"]))
+          output = Path("dist/cloudflare-records.json")
+          output.write_text(json.dumps(records, indent=2) + "\n")
+
+          encoded_token = base64.b64encode(token.encode()).decode()
+          for path in [Path("dist/sealedsecret-cloudflare-api-token.yaml"), output]:
+              content = path.read_text()
+              if token in content or encoded_token in content:
+                  raise RuntimeError(f"Credential leaked into {path}")
+          print(f"Validated encrypted artifact and {len(records)} sanitized DNS records")
+          PY
+
+      - name: Upload encrypted bootstrap artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: cert-manager-cloudflare-${{ github.run_id }}
+          path: "dist/sealedsecret-cloudflare-api-token.yaml\ndist/cloudflare-records.json"
+          retention-days: 1
+          if-no-files-found: error
