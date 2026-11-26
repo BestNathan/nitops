@@ -16,7 +16,7 @@ This is not one unattended deployment. Use a new isolated worktree through `supe
 
 | Stage | Merge/deploy gate | Required live evidence before continuing |
 |---|---|---|
-| PR-0 | Offline credential bootstrap amendment below | Protected main-only workflow succeeds; artifact contains only SealedSecret ciphertext and sanitized DNS name/type inventory |
+| PR-0 | Offline credential bootstrap amendment below | Main-only workflow using the repository-level Secret succeeds; artifact contains only SealedSecret ciphertext and sanitized DNS name/type inventory |
 | PR-1 | Tasks 1–3 | CRDs Established, controllers/webhook Ready, Staging Certificate Ready, legacy Issuers safely handled |
 | PR-2 | Task 4 | Production Certificate Ready, SAN/chain/key verified, controller metrics and alerts loaded |
 | PR-3A | Task 5 | Every SLB node serves the new serial; `nhome.local` and `default` unchanged |
@@ -38,14 +38,14 @@ The owner confirmed that the reusable credential is the GitHub Actions Secret `B
 - Create: `components/sealed-secrets/public-cert.pem`
 - Create: `scripts/cert_manager/test_bootstrap_workflow.py`
 
-- [ ] Write `test_bootstrap_workflow.py` first and verify it fails because the workflow is absent. Tests must require `workflow_dispatch`, a main-only job condition, `contents: read`, a dedicated `cert-manager-bootstrap` environment, full-SHA action pins, `persist-credentials: false`, a five-minute timeout, one-day artifact retention, and secret env only on the Seal and DNS inventory/validation steps.
+- [ ] Write `test_bootstrap_workflow.py` first and verify it fails because the workflow is absent. Tests must require `workflow_dispatch`, a main-only job condition, no GitHub Environment, direct use of the repository-level Secret, `contents: read`, full-SHA action pins, `persist-credentials: false`, a five-minute timeout, one-day artifact retention, and secret env only on the Seal and DNS inventory/validation steps.
 - [ ] Copy the already inspected public sealing certificate from `/tmp/nitops-sealed-secrets-public-cert.pem`; assert its SHA-256 fingerprint is `25:01:16:0D:24:A7:A6:21:A8:C1:CA:16:C5:B5:DD:6A:0D:F3:AF:6B:14:C2:6A:1F:0D:D4:F5:5D:F8:65:B3:1A`. It is a public key, not a private sealing key.
 - [ ] Implement the workflow with no checkout credentials, no shell xtrace, and no Token in job-level env. Before any secret-bearing step, download `kubeseal-0.27.1-linux-amd64.tar.gz` into a new runner-temp download directory, require SHA-256 `01069a5e79ed7702ba10bed42cd8132d94746ca288add06836d082b4202c2789`, and extract the binary into a separate runner-temp bin directory.
 - [ ] In the Seal step, use Python standard library to turn the env Token directly into a namespaced `Secret/cert-manager/cloudflare-api-token` JSON stream and pipe it to offline `kubeseal --cert components/sealed-secrets/public-cert.pem --format yaml --scope strict`. Never write the raw Secret to disk. Parse the generated YAML in the same step and reject any unexpected artifact type, top-level/template Secret name or Namespace, missing or additional encrypted data keys, unencrypted `data`, or raw/Base64 Token occurrence.
 - [ ] In the DNS inventory step, verify the Token with Cloudflare, retrieve only `bestnathan.top`, and write paginated, sorted `{name,type}` records to `dist/cloudflare-records.json`. Do not write record content, IPs, Zone IDs, Token IDs, or credentials.
 - [ ] In the same secret-bearing step, assert neither the raw nor base64 Token occurs in either dist file. Upload only `dist/sealedsecret-cloudflare-api-token.yaml` and `dist/cloudflare-records.json` with `retention-days: 1`.
 - [ ] Add executable behavior tests: prove a wrong-identity SealedSecret is rejected, prove alternate Secret-expression spellings cannot bypass step scoping, and execute the real Seal shell with a dummy Token through verified kubeseal v0.27.1. Capture its argv to require the exact certificate/format/strict-scope arguments and parse the result to verify the top-level/template identity, encrypted-only token, and absence of raw/Base64 Token. Put verified kubeseal v0.27.1 on `PATH`, then run `KUBESEAL_BIN="$(command -v kubeseal)" python3 scripts/cert_manager/test_bootstrap_workflow.py -v`. Do not use the real GitHub Secret locally.
-- [ ] Commit PR-0 after all tests pass. Before dispatch, the owner must configure GitHub Environment `cert-manager-bootstrap` with required reviewer `BestNathan` and restrict deployment branches to `main`. Merge approval and environment approval are separate gates.
+- [ ] Commit PR-0 after all tests pass. Before dispatch, the owner must confirm the repository Actions Secret `CLOUDFLARE_API_TOKEN` exists and manually dispatch the workflow from `main`; no GitHub Environment or deployment approval is used. Merge and dispatch remain separate operator gates.
 
 ### Consume the PR-0 artifact
 
@@ -104,7 +104,7 @@ For Task 3 Step 5, rerun the same main-only workflow after Staging issuance, dow
 
 | File | Responsibility |
 |---|---|
-| `.github/workflows/seal-cert-manager-cloudflare.yml` | Protected PR-0 offline sealing and sanitized DNS inventory using the existing GitHub Secret |
+| `.github/workflows/seal-cert-manager-cloudflare.yml` | Main-only PR-0 offline sealing and sanitized DNS inventory using the existing repository-level GitHub Secret |
 | `components/sealed-secrets/public-cert.pem` | Public offline SealedSecrets encryption certificate |
 | `scripts/cert_manager/test_bootstrap_workflow.py` | PR-0 workflow security contract tests |
 | `scripts/cert_manager/render_upstream.py` | Verify the expected upstream document count, split 47 resources into one-resource files, and apply reviewed version/digest/scheduling/proxy/DNS transforms |
@@ -722,7 +722,7 @@ Expected: SAN is exactly `*.bestnathan.top`, issuer is Let's Encrypt Staging, ch
 
 - [ ] **Step 5: Compare post-issuance DNS names/types with the baseline**
 
-After Staging issuance, rerun the protected main-only PR-0 workflow and download its new artifact into a different new empty directory named by `AFTER_ARTIFACT_DIR`, as specified in the PR-0 amendment. Do not re-enter the Token locally and do not replace the committed SealedSecret with the rerun's randomized ciphertext. Read the mode-0700 backup path printed in Task 0, validate it, and compare only the sanitized inventories:
+After Staging issuance, rerun the main-only PR-0 workflow and download its new artifact into a different new empty directory named by `AFTER_ARTIFACT_DIR`, as specified in the PR-0 amendment. Do not re-enter the Token locally and do not replace the committed SealedSecret with the rerun's randomized ciphertext. Read the mode-0700 backup path printed in Task 0, validate it, and compare only the sanitized inventories:
 
 ```bash
 read -r BACKUP_DIR

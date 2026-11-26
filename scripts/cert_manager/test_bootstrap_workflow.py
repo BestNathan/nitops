@@ -114,13 +114,13 @@ class BootstrapWorkflowTests(unittest.TestCase):
         artifact = workspace / "dist/sealedsecret-cloudflare-api-token.yaml"
         return result, artifact, environment["ARGV_FILE"]
 
-    def test_manual_main_only_protected_execution(self):
+    def test_manual_main_only_repository_secret_execution(self):
         document = load_workflow()
         self.assertEqual(set(document["on"]), {"workflow_dispatch"})
         self.assertEqual(document["permissions"], {"contents": "read"})
         job = document["jobs"]["seal"]
         self.assertEqual(job["if"], "github.ref == 'refs/heads/main'")
-        self.assertEqual(job["environment"], "cert-manager-bootstrap")
+        self.assertNotIn("environment", job)
         self.assertEqual(job["timeout-minutes"], 5)
         checkout = next(step for step in job["steps"] if "uses" in step and step["uses"].startswith("actions/checkout@"))
         self.assertEqual(checkout["uses"], f"actions/checkout@{CHECKOUT_SHA}")
