@@ -141,14 +141,19 @@ jobs:
                   raise RuntimeError("Cloudflare API request failed")
               return document
 
-          verification = get("/user/tokens/verify")
-          if verification["result"].get("status") != "active":
-              raise RuntimeError("Cloudflare Token is not active")
-
           zones = get("/zones?name=bestnathan.top&status=active")["result"]
-          if len(zones) != 1 or zones[0]["name"] != "bestnathan.top":
+          if (
+              len(zones) != 1
+              or zones[0]["name"] != "bestnathan.top"
+              or zones[0]["status"] != "active"
+          ):
               raise RuntimeError("Expected exactly one active bestnathan.top Zone")
           zone_id = zones[0]["id"]
+          account_id = zones[0]["account"]["id"]
+
+          verification = get(f"/accounts/{account_id}/tokens/verify")
+          if verification["result"].get("status") != "active":
+              raise RuntimeError("Cloudflare Token is not active")
 
           records = []
           page = 1
