@@ -1,3 +1,4 @@
+import hashlib
 import unittest
 from pathlib import Path
 
@@ -146,11 +147,60 @@ class ManifestContracts(unittest.TestCase):
             "CertManagerSyncErrors",
         })
         self.assertNotIn("blackbox", rules_text)
+        expiry = next(
+            rule
+            for group in groups
+            for rule in group["rules"]
+            if rule["alert"] == "CertManagerCertificateExpiring"
+        )
+        self.assertIn("> 0", expiry["expr"])
+
+    def test_prometheus_recreate_and_config_checksum(self):
+        root = ROOT / "components/observability/prometheus"
+        config_map = yaml.safe_load((root / "configmap.yaml").read_text())
+        rules_map = yaml.safe_load((root / "configmap-rules.yaml").read_text())
+        expected = hashlib.sha256(
+            (
+                config_map["data"]["prometheus.yml"]
+                + "\n"
+                + rules_map["data"]["cert-manager.yml"]
+            ).encode()
+        ).hexdigest()
+        deployment = yaml.safe_load((root / "deployment.yaml").read_text())
+        self.assertEqual(deployment["spec"]["replicas"], 1)
+        self.assertEqual(deployment["spec"].get("strategy", {}).get("type"), "Recreate")
+        annotations = deployment["spec"]["template"]["metadata"].get("annotations", {})
+        self.assertEqual(annotations.get("checksum/prometheus-config"), expected)
+
+    def test_slb_application_bootstraps_before_cert_manager(self):
+        cert_manager = yaml.safe_load((ROOT / "apps/cert-manager.yaml").read_text())
+        slb = yaml.safe_load((ROOT / "apps/slb.yaml").read_text())
+        cert_wave = int(
+            cert_manager["metadata"].get("annotations", {}).get(
+                "argocd.argoproj.io/sync-wave", "0"
+            )
+        )
+        slb_wave = int(
+            slb["metadata"].get("annotations", {}).get(
+                "argocd.argoproj.io/sync-wave", "0"
+            )
+        )
+        self.assertLess(slb_wave, cert_wave)
 
     def test_no_competing_secret_writer_or_private_ca(self):
         sealed = docs("components/cert-manager/secrets/*.yaml")
         for item in sealed:
             self.assertNotEqual(item["metadata"]["name"], "bestnathan-top-tls")
+        competing = []
+        for path in ROOT.glob("components/**/*.yaml"):
+            for item in docs(str(path.relative_to(ROOT))):
+                if (
+                    item.get("kind") in {"Secret", "SealedSecret"}
+                    and item.get("metadata", {}).get("name") == "bestnathan-top-tls"
+                    and item.get("metadata", {}).get("namespace") == "slb"
+                ):
+                    competing.append(str(path))
+        self.assertEqual(competing, [])
         all_text = "\n".join(
             path.read_text()
             for path in (ROOT / "components/cert-manager").rglob("*.yaml")

@@ -1,0 +1,17 @@
+rule_files:
+  - /etc/prometheus/rules/cert-manager.yml
+
+evaluation_interval: 15s
+
+group_eval_order:
+  - cert-manager
+
+tests:
+  - interval: 15s
+    input_series:
+      - series: 'certmanager_certificate_expiration_timestamp_seconds{namespace="slb",name="bestnathan-wildcard"}'
+        values: "0x120"
+    alert_rule_test:
+      - alertname: CertManagerCertificateExpiring
+        eval_time: 30m
+        exp_alerts: []

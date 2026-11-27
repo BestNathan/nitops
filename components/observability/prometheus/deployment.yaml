@@ -7,6 +7,8 @@ metadata:
     app: prometheus
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: prometheus
@@ -14,6 +16,8 @@ spec:
     metadata:
       labels:
         app: prometheus
+      annotations:
+        checksum/prometheus-config: "7a9162c3c589470e319b1783d8873bbfd08d9daeefbe85771d2837dc73c22101"
     spec:
       serviceAccountName: prometheus
       containers:
