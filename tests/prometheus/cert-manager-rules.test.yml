@@ -5,6 +5,7 @@ evaluation_interval: 15s
 
 group_eval_order:
   - cert-manager
+  - edge-tls-lan
 
 tests:
   - interval: 15s
@@ -13,5 +14,25 @@ tests:
         values: "0x120"
     alert_rule_test:
       - alertname: CertManagerCertificateExpiring
+        eval_time: 30m
+        exp_alerts: []
+
+  - interval: 15s
+    input_series:
+      - series: 'probe_success{job="blackbox-lan-slb",instance="https://192.168.2.86/"}'
+        values: "0x120"
+      - series: 'probe_ssl_earliest_cert_expiry{job="blackbox-lan-slb",instance="https://192.168.2.86/"}'
+        values: "0x120"
+    alert_rule_test:
+      - alertname: LanSlbTlsProbeFailed
+        eval_time: 30m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: blackbox-lan-slb
+              instance: https://192.168.2.86/
+            exp_annotations:
+              summary: LAN SLB HTTPS probe fails with normal trust verification
+      - alertname: LanSlbCertificateExpiring
         eval_time: 30m
         exp_alerts: []

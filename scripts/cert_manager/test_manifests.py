@@ -136,7 +136,7 @@ class ManifestContracts(unittest.TestCase):
         groups = yaml.safe_load(rules_text)["groups"]
         alerts = {
             rule["alert"]
-            for group in groups
+            for group in groups if group["name"] == "cert-manager"
             for rule in group["rules"]
         }
         self.assertEqual(alerts, {
@@ -146,7 +146,7 @@ class ManifestContracts(unittest.TestCase):
             "CertManagerScrapeDown",
             "CertManagerSyncErrors",
         })
-        self.assertNotIn("blackbox", rules_text)
+        self.assertNotIn("public", rules_text)
         expiry = next(
             rule
             for group in groups
@@ -254,6 +254,52 @@ class ManifestContracts(unittest.TestCase):
         self.assertNotIn("/etc/nginx/certs-managed/bestnathan", sites)
         self.assertNotIn("/etc/nginx/certs/bestnathan.crt", sites)
         self.assertNotIn("/etc/nginx/certs/bestnathan.key", sites)
+
+    def test_lan_blackbox_monitoring_is_pinned_and_lan_only(self):
+        root = ROOT / "components/observability/prometheus"
+        config_map = yaml.safe_load((root / "configmap.yaml").read_text())
+        prometheus = yaml.safe_load(config_map["data"]["prometheus.yml"])
+        jobs = {job["job_name"]: job for job in prometheus["scrape_configs"]}
+        self.assertIn("blackbox-lan-slb", jobs)
+        self.assertNotIn("blackbox-public-mcp", jobs)
+        lan = jobs["blackbox-lan-slb"]
+        self.assertEqual(lan["params"]["module"], ["lan_slb_https"])
+        self.assertEqual(
+            lan["static_configs"][0]["targets"],
+            [
+                "https://192.168.2.162/",
+                "https://192.168.2.86/",
+                "https://192.168.2.232/",
+                "https://192.168.2.224/",
+            ],
+        )
+
+        blackbox = yaml.safe_load((root / "configmap-blackbox.yaml").read_text())
+        modules = yaml.safe_load(blackbox["data"]["blackbox.yml"])["modules"]
+        self.assertFalse(modules["lan_slb_https"]["http"]["tls_config"]["insecure_skip_verify"])
+        self.assertEqual(
+            modules["lan_slb_https"]["http"]["tls_config"]["server_name"],
+            "argocd.bestnathan.top",
+        )
+        self.assertTrue(modules["public_mcp_https"]["http"]["skip_resolve_phase_with_proxy"])
+
+        deployment = yaml.safe_load((root / "deployment-blackbox.yaml").read_text())
+        container = deployment["spec"]["template"]["spec"]["containers"][0]
+        self.assertEqual(
+            container["image"],
+            "prom/blackbox-exporter@sha256:a50c4c0eda297baa1678cd4dc4712a67fdea713b832d43ce7fcc5f9bea05094d",
+        )
+        service = yaml.safe_load((root / "service-blackbox.yaml").read_text())
+        self.assertEqual(service["spec"]["ports"][0]["port"], 9115)
+
+        rules_map = yaml.safe_load((root / "configmap-rules.yaml").read_text())
+        groups = yaml.safe_load(rules_map["data"]["cert-manager.yml"])["groups"]
+        lan_rules = {
+            rule["alert"]
+            for group in groups if group["name"] == "edge-tls-lan"
+            for rule in group["rules"]
+        }
+        self.assertEqual(lan_rules, {"LanSlbTlsProbeFailed", "LanSlbCertificateExpiring"})
 
     def test_no_competing_secret_writer_or_private_ca(self):
         sealed = docs("components/cert-manager/secrets/*.yaml")
