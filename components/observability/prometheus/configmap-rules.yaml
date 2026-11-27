@@ -15,7 +15,7 @@ data:
             annotations:
               summary: Production wildcard Certificate is not Ready
           - alert: CertManagerCertificateExpiring
-            expr: time() > certmanager_certificate_expiration_timestamp_seconds{namespace="slb",name="bestnathan-wildcard"} - 14 * 86400
+            expr: (certmanager_certificate_expiration_timestamp_seconds{namespace="slb",name="bestnathan-wildcard"} > 0) and (time() > certmanager_certificate_expiration_timestamp_seconds{namespace="slb",name="bestnathan-wildcard"} - 14 * 86400)
             for: 15m
             labels: {severity: warning}
             annotations:

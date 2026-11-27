@@ -5,6 +5,8 @@ metadata:
   namespace: argocd
   labels:
     app: slb
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
 spec:
   project: default
   source:

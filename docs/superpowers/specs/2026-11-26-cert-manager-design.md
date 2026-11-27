@@ -312,8 +312,9 @@ PR-4 的 observe-only 模式只执行下述第 1～5 步，不更新 `current`�
 
 ### PR-2：Production Certificate 与控制器监控
 
-- 移除临时 Staging Certificate，创建生产 Certificate。
+- 移除临时 Staging Certificate，创建生产 Certificate；根 Application 中 `slb` 子 Application 使用更早 sync wave，确保目标 Namespace 先于 Production Certificate 存在。
 - 添加 cert-manager metrics，以及只针对 controller/Certificate 的 Prometheus rules；此时尚不启用 LAN/Public Blackbox 告警，避免旧证书尚未切换时产生预期内误报。
+- 单副本 Prometheus 使用 `Recreate` 避免 NFS TSDB 双写；配置和规则内容 checksum 写入 Pod template，确保后续 ConfigMap 变化自动触发滚动。证书到期规则必须忽略 `notAfter=0` 的未初始化样本，并由 promtool 行为测试证明。
 - 等待 ClusterIssuer/Certificate Ready，验证 SAN、完整链、私钥匹配和有效期。
 - 此时 SLB/Router 尚未切换，不能宣称流量已使用可信证书。
 

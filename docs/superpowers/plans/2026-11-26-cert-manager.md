@@ -851,6 +851,9 @@ Expected: no added/changed business A, AAAA, or CNAME records. A still-present A
 - Modify: `components/observability/prometheus/configmap.yaml`
 - Modify: `components/observability/prometheus/deployment.yaml`
 - Create: `components/observability/prometheus/configmap-rules.yaml`
+- Modify: `apps/slb.yaml`
+- Create: `tests/prometheus/cert-manager-rules.test.yml`
+- Create: `tests/prometheus/run-cert-manager-rules.sh`
 
 - [ ] **Step 1: Replace Staging with the sole production Certificate**
 
@@ -895,6 +898,8 @@ Run `python3 scripts/cert_manager/test_manifests.py -v`; expected PASS with exac
 
 - [ ] **Step 2: Add the controller scrape and rules file reference**
 
+Set `apps/slb.yaml` metadata annotation `argocd.argoproj.io/sync-wave: "-10"` so the root Application reconciles the `slb` Namespace and its owning Application before the default-wave cert-manager Application can create the Production Certificate there.
+
 Inside `data.prometheus.yml` in `components/observability/prometheus/configmap.yaml`, add immediately after `evaluation_interval: 15s`:
 
 ```yaml
@@ -927,6 +932,14 @@ Add a second Pod volume:
             name: prometheus-rules
 ```
 
+Set `spec.strategy.type: Recreate` because one Prometheus replica shares an NFS TSDB and must not overlap writers. Add `spec.template.metadata.annotations["checksum/prometheus-config"]` so every config/rules content change causes a rollout. Compute the required value and update the annotation whenever either source changes:
+
+```bash
+python3 -I -c 'import hashlib,yaml; from pathlib import Path; root=Path("components/observability/prometheus"); config=yaml.safe_load((root/"configmap.yaml").read_text()); rules=yaml.safe_load((root/"configmap-rules.yaml").read_text()); print(hashlib.sha256((config["data"]["prometheus.yml"]+"\n"+rules["data"]["cert-manager.yml"]).encode()).hexdigest())'
+```
+
+The manifest contract test recomputes this digest and fails if the annotation is stale.
+
 - [ ] **Step 4: Add controller/Certificate alerts only**
 
 ```yaml
@@ -948,7 +961,7 @@ data:
             annotations:
               summary: Production wildcard Certificate is not Ready
           - alert: CertManagerCertificateExpiring
-            expr: time() > certmanager_certificate_expiration_timestamp_seconds{namespace="slb",name="bestnathan-wildcard"} - 14 * 86400
+            expr: (certmanager_certificate_expiration_timestamp_seconds{namespace="slb",name="bestnathan-wildcard"} > 0) and (time() > certmanager_certificate_expiration_timestamp_seconds{namespace="slb",name="bestnathan-wildcard"} - 14 * 86400)
             for: 15m
             labels: {severity: warning}
             annotations:
@@ -979,6 +992,7 @@ Run:
 
 ```bash
 python3 -m unittest discover -s scripts/cert_manager -p 'test_*.py' -v
+tests/prometheus/run-cert-manager-rules.sh
 kubectl apply --dry-run=client -R -f components/cert-manager >/dev/null
 kubectl apply --dry-run=client -f components/observability/prometheus >/dev/null
 git add apps/cert-manager.yaml components/cert-manager components/observability/prometheus scripts/cert_manager
@@ -993,7 +1007,6 @@ Expected: only one Certificate, no Blackbox alert yet, no unrelated modification
 After approval and merge:
 
 ```bash
-kubectl -n observability rollout restart deployment/prometheus
 kubectl -n observability rollout status deployment/prometheus --timeout=5m
 kubectl wait --for=condition=Ready clusterissuer/letsencrypt-production --timeout=10m
 kubectl -n slb wait --for=condition=Ready certificate/bestnathan-wildcard --timeout=15m
