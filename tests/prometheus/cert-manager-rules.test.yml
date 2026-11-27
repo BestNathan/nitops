@@ -36,3 +36,18 @@ tests:
       - alertname: LanSlbCertificateExpiring
         eval_time: 30m
         exp_alerts: []
+
+  - interval: 15s
+    input_series:
+      - series: 'up{job="cert-manager",instance="cert-manager.cert-manager.svc:9402"}'
+        values: "0x30"
+    alert_rule_test:
+      - alertname: CertManagerScrapeDown
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: cert-manager
+              instance: cert-manager.cert-manager.svc:9402
+            exp_annotations:
+              summary: Prometheus cannot scrape cert-manager
