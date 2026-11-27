@@ -1042,6 +1042,8 @@ Expected: production Let's Encrypt issuer, wildcard host match, and complete cha
 
 ### Task 5: PR-3A SLB Secret consumption and verified reload
 
+> **Amendment (implemented):** The inline script draft below is superseded by the generation-based implementation in `components/slb/nginx-proxy/configmap-reloader.yaml` and the authoritative design in spec §8. nginx reads an immutable validated generation via `/etc/nginx/certs-active/current` (shared memory emptyDir), never the live Secret. The Secret volume is `optional: true` with an NFS `bootstrap-nfs` fallback to avoid a cold-bootstrap deadlock; SAN must be exactly the single `DNS:*.bestnathan.top`; fingerprints hash content only; failed reload/readback rolls back to `previous`; `verified-fingerprint` lets a restarted sidecar reconcile pending rotations; the script is mounted as a whole directory with a pod-template checksum. Tests are in `tests/slb/test-cert-reloader.sh` (real CA→intermediate→leaf chain, real `openssl verify`, wrong-SAN/untrusted-chain/key-mismatch rejection, nginx-test and served-serial rollback, sidecar-restart reconciliation, no-op).
+
 **Files:**
 - Create: `components/slb/nginx-proxy/configmap-reloader.yaml`
 - Modify: `components/slb/nginx-proxy/daemonset.yaml`
@@ -1119,6 +1121,11 @@ CERT_DIR=${CERT_DIR:-/etc/nginx/certs-managed/bestnathan}
 RUN_DIR=${RUN_DIR:-/var/run/cert-reloader}
 PROBE_HOST=${PROBE_HOST:-argocd.bestnathan.top}
 OPENSSL_BIN=${OPENSSL_BIN:-openssl}
+CA_BUNDLE=${CA_BUNDLE:-/etc/ssl/certs/ca-certificates.crt}
+RELOADER_SETTLE_SECONDS=${RELOADER_SETTLE_SECONDS:-10}
+RELOAD_MIN_INTERVAL=${RELOAD_MIN_INTERVAL:-30}
+VERIFY_ATTEMPTS=${VERIFY_ATTEMPTS:-6}
+VERIFY_DELAY=${VERIFY_DELAY:-5}
 mkdir -p "$RUN_DIR"
 LAST_FINGERPRINT=${LAST_FINGERPRINT:-}
 LAST_RELOAD=${LAST_RELOAD:-0}
@@ -1132,13 +1139,53 @@ candidate_serial() {
   "$OPENSSL_BIN" x509 -in "$CERT_DIR/tls.crt" -noout -serial | cut -d= -f2
 }
 
+validate_candidate() {
+  [ -s "$CERT_DIR/tls.crt" ] && [ -s "$CERT_DIR/tls.key" ] || return 1
+  certificate_count=$(grep -c 'BEGIN CERTIFICATE' "$CERT_DIR/tls.crt" || :)
+  [ "$certificate_count" -ge 2 ] || {
+    printf 'candidate fullchain is incomplete\n' >&2
+    return 1
+  }
+  if ! timeout 20 "$OPENSSL_BIN" x509 -in "$CERT_DIR/tls.crt" -noout \
+    -checkend 86400 -checkhost "$PROBE_HOST"; then
+    printf 'candidate SAN or validity window is invalid\n' >&2
+    return 1
+  fi
+  if ! timeout 20 "$OPENSSL_BIN" x509 -in "$CERT_DIR/tls.crt" -pubkey -noout \
+    > "$RUN_DIR/candidate-public.pem"; then
+    return 1
+  fi
+  if ! timeout 20 "$OPENSSL_BIN" pkey -pubin \
+    -in "$RUN_DIR/candidate-public.pem" -outform DER \
+    -out "$RUN_DIR/candidate-public.der"; then
+    return 1
+  fi
+  if ! timeout 20 "$OPENSSL_BIN" pkey -in "$CERT_DIR/tls.key" \
+    -pubout -outform DER -out "$RUN_DIR/candidate-key-public.der"; then
+    printf 'candidate private key is invalid\n' >&2
+    return 1
+  fi
+  certificate_public=$(sha256sum "$RUN_DIR/candidate-public.der" | cut -d' ' -f1)
+  key_public=$(sha256sum "$RUN_DIR/candidate-key-public.der" | cut -d' ' -f1)
+  [ "$certificate_public" = "$key_public" ] || {
+    printf 'candidate certificate and private key do not match\n' >&2
+    return 1
+  }
+  if ! timeout 20 "$OPENSSL_BIN" verify -CAfile "$CA_BUNDLE" \
+    -untrusted "$CERT_DIR/tls.crt" "$CERT_DIR/tls.crt" \
+    > "$RUN_DIR/candidate-verify.out" 2> "$RUN_DIR/candidate-verify.err"; then
+    printf 'candidate chain is not publicly trusted\n' >&2
+    return 1
+  fi
+}
+
 verify_served() {
   expected=$1
   attempt=0
-  while [ "$attempt" -lt 6 ]; do
+  while [ "$attempt" -lt "$VERIFY_ATTEMPTS" ]; do
     if timeout 20 "$OPENSSL_BIN" s_client \
       -connect 127.0.0.1:443 -servername "$PROBE_HOST" \
-      -verify_return_error -CAfile /etc/ssl/certs/ca-certificates.crt \
+      -verify_return_error -CAfile "$CA_BUNDLE" \
       </dev/null >"$RUN_DIR/peer.pem" 2>"$RUN_DIR/peer.err"; then
       actual=$("$OPENSSL_BIN" x509 -in "$RUN_DIR/peer.pem" -noout -serial | cut -d= -f2)
       if [ "$actual" = "$expected" ]; then
@@ -1147,7 +1194,7 @@ verify_served() {
       fi
     fi
     attempt=$((attempt + 1))
-    sleep 5
+    if [ "$attempt" -lt "$VERIFY_ATTEMPTS" ]; then sleep "$VERIFY_DELAY"; fi
   done
   return 1
 }
@@ -1155,12 +1202,14 @@ verify_served() {
 run_once() {
   current=$(fingerprint) || return 1
   [ "$current" != "$LAST_FINGERPRINT" ] || return 0
-  sleep 10
+  sleep "$RELOADER_SETTLE_SECONDS"
   confirmed=$(fingerprint) || return 1
   [ "$confirmed" = "$current" ] || return 1
+  validate_candidate || return 1
+  expected=$(candidate_serial) || return 1
   now=$(date +%s)
   elapsed=$((now - LAST_RELOAD))
-  if [ "$elapsed" -lt 30 ]; then sleep $((30 - elapsed)); fi
+  if [ "$elapsed" -lt "$RELOAD_MIN_INTERVAL" ]; then sleep $((RELOAD_MIN_INTERVAL - elapsed)); fi
   if ! timeout 20 nginx -t; then
     printf 'nginx config test failed; retaining active configuration\n' >&2
     return 1
@@ -1169,7 +1218,6 @@ run_once() {
     printf 'nginx reload failed; not advancing certificate generation\n' >&2
     return 1
   fi
-  expected=$(candidate_serial)
   if ! verify_served "$expected"; then
     printf 'served certificate did not converge to expected serial\n' >&2
     return 1

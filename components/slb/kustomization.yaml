@@ -6,4 +6,5 @@ resources:
   - namespace/pvc.yaml
   - nginx-proxy/configmap.yaml
   - nginx-proxy/configmap-sites.yaml
+  - nginx-proxy/configmap-reloader.yaml
   - nginx-proxy/daemonset.yaml
