@@ -211,7 +211,7 @@ Expected: a non-empty name/type inventory with no record content, credentials, o
 - [ ] **Step 5: Verify amd64 egress and public recursive DNS before installing**
 
 ```bash
-ssh root@192.168.2.86 'curl -fsS --max-time 20 --proxy http://192.168.2.98:7895 https://acme-staging-v02.api.letsencrypt.org/directory >/dev/null; curl -fsS --max-time 20 --proxy http://192.168.2.98:7895 https://api.cloudflare.com/ips-v4 >/dev/null; dig @1.1.1.1 bestnathan.top NS +time=5 +tries=1 +noall +comments; dig @8.8.8.8 bestnathan.top NS +time=5 +tries=1 +noall +comments'
+ssh root@192.168.2.86 'curl -fsS --max-time 20 --proxy http://192.168.2.98:7895 https://acme-staging-v02.api.letsencrypt.org/directory >/dev/null; curl -fsS --max-time 20 --proxy http://192.168.2.98:7895 https://www.cloudflare.com/ips-v4 >/dev/null; dig @1.1.1.1 bestnathan.top NS +time=5 +tries=1 +noall +answer +comments; dig @8.8.8.8 bestnathan.top NS +time=5 +tries=1 +noall +answer +comments'
 ```
 
 Expected: both HTTPS requests succeed and both public resolvers return `NOERROR` with the Cloudflare nameservers. Any failure stops PR-1 before ArgoCD sync.
