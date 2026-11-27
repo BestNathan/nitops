@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: nginx-proxy
+      annotations:
+        checksum/slb-reloader: "a485684901ed2dab1a14e9edee32f7a01e669bc495094d5aaffef889882bc9d1"
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
@@ -28,7 +30,18 @@ spec:
             - sh
             - -c
             - |
+              set -eu
               mkdir -p /etc/nginx/conf.d /etc/nginx/certs
+              STATE_DIR=/etc/nginx/certs-active
+              mkdir -p "$STATE_DIR/generations"
+              if [ ! -e "$STATE_DIR/current/tls.crt" ]; then
+                mkdir -p "$STATE_DIR/generations/bootstrap-nfs"
+                cp /etc/nginx/certs/bestnathan.crt "$STATE_DIR/generations/bootstrap-nfs/tls.crt"
+                cp /etc/nginx/certs/bestnathan.key "$STATE_DIR/generations/bootstrap-nfs/tls.key"
+                chmod 644 "$STATE_DIR/generations/bootstrap-nfs/tls.crt"
+                chmod 600 "$STATE_DIR/generations/bootstrap-nfs/tls.key"
+                ln -sfn generations/bootstrap-nfs "$STATE_DIR/current"
+              fi
               exec nginx -g "daemon off;"
           ports:
             - containerPort: 80
@@ -48,26 +61,22 @@ spec:
             initialDelaySeconds: 3
             periodSeconds: 5
           volumeMounts:
-            # Main nginx config from ConfigMap
             - name: nginx-conf
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
-            # Site configs from ConfigMap (GitOps managed)
             - name: nginx-sites
               mountPath: /etc/nginx/conf.d
-            # Default TLS cert on NFS
             - name: nfs-root
               mountPath: /etc/nginx/certs
               subPath: slb/nginx-conf/certs
               readOnly: true
-            - name: bestnathan-tls
-              mountPath: /etc/nginx/certs-managed/bestnathan
-              readOnly: true
+            - name: certs-active
+              mountPath: /etc/nginx/certs-active
             - name: nginx-run
               mountPath: /var/run
         - name: cert-reloader
           image: docker.io/library/nginx@sha256:2f4e10193b0c4f61472245e9d26cea78e7df7af266c7e7cf5e67353ee2731b51
-          command: ["/bin/sh", "/usr/local/bin/cert-reloader.sh"]
+          command: ["/bin/sh", "/usr/local/share/cert-reloader/cert-reloader.sh"]
           env:
             - name: PROBE_HOST
               value: argocd.bestnathan.top
@@ -84,11 +93,13 @@ spec:
             - name: bestnathan-tls
               mountPath: /etc/nginx/certs-managed/bestnathan
               readOnly: true
+            - name: certs-active
+              mountPath: /etc/nginx/certs-active
             - name: nginx-run
               mountPath: /var/run
             - name: reloader-script
-              mountPath: /usr/local/bin/cert-reloader.sh
-              subPath: cert-reloader.sh
+              mountPath: /usr/local/share/cert-reloader
+              readOnly: true
       volumes:
         - name: nginx-conf
           configMap:
@@ -102,7 +113,11 @@ spec:
         - name: bestnathan-tls
           secret:
             secretName: bestnathan-top-tls
+            optional: true
             defaultMode: 0400
+        - name: certs-active
+          emptyDir:
+            medium: Memory
         - name: nginx-run
           emptyDir: {}
         - name: reloader-script

@@ -1042,6 +1042,8 @@ Expected: production Let's Encrypt issuer, wildcard host match, and complete cha
 
 ### Task 5: PR-3A SLB Secret consumption and verified reload
 
+> **Amendment (implemented):** The inline script draft below is superseded by the generation-based implementation in `components/slb/nginx-proxy/configmap-reloader.yaml` and the authoritative design in spec §8. nginx reads an immutable validated generation via `/etc/nginx/certs-active/current` (shared memory emptyDir), never the live Secret. The Secret volume is `optional: true` with an NFS `bootstrap-nfs` fallback to avoid a cold-bootstrap deadlock; SAN must be exactly the single `DNS:*.bestnathan.top`; fingerprints hash content only; failed reload/readback rolls back to `previous`; `verified-fingerprint` lets a restarted sidecar reconcile pending rotations; the script is mounted as a whole directory with a pod-template checksum. Tests are in `tests/slb/test-cert-reloader.sh` (real CA→intermediate→leaf chain, real `openssl verify`, wrong-SAN/untrusted-chain/key-mismatch rejection, nginx-test and served-serial rollback, sidecar-restart reconciliation, no-op).
+
 **Files:**
 - Create: `components/slb/nginx-proxy/configmap-reloader.yaml`
 - Modify: `components/slb/nginx-proxy/daemonset.yaml`

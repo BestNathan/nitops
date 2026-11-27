@@ -202,29 +202,56 @@ class ManifestContracts(unittest.TestCase):
                 container["image"],
                 "docker.io/library/nginx@sha256:2f4e10193b0c4f61472245e9d26cea78e7df7af266c7e7cf5e67353ee2731b51",
             )
-            mount = next(
+            active = next(
                 item for item in container["volumeMounts"]
-                if item["name"] == "bestnathan-tls"
+                if item["name"] == "certs-active"
             )
-            self.assertEqual(mount["mountPath"], "/etc/nginx/certs-managed/bestnathan")
-            self.assertTrue(mount["readOnly"])
-            self.assertNotIn("subPath", mount)
+            self.assertEqual(active["mountPath"], "/etc/nginx/certs-active")
+
+        nginx_mounts = {item["name"] for item in containers["nginx"]["volumeMounts"]}
+        self.assertNotIn("bestnathan-tls", nginx_mounts)
+        self.assertIn("bootstrap-nfs", "\n".join(containers["nginx"]["command"]))
+
+        reloader = containers["cert-reloader"]
+        secret_mount = next(
+            item for item in reloader["volumeMounts"] if item["name"] == "bestnathan-tls"
+        )
+        self.assertEqual(secret_mount["mountPath"], "/etc/nginx/certs-managed/bestnathan")
+        self.assertTrue(secret_mount["readOnly"])
+        self.assertNotIn("subPath", secret_mount)
+        script_mount = next(
+            item for item in reloader["volumeMounts"] if item["name"] == "reloader-script"
+        )
+        self.assertNotIn("subPath", script_mount)
+        self.assertEqual(script_mount["mountPath"], "/usr/local/share/cert-reloader")
+        self.assertIn("/usr/local/share/cert-reloader/cert-reloader.sh", reloader["command"])
+
         volumes = {item["name"]: item for item in pod["volumes"]}
-        self.assertEqual(volumes["bestnathan-tls"]["secret"]["secretName"], "bestnathan-top-tls")
-        self.assertEqual(volumes["bestnathan-tls"]["secret"]["defaultMode"], 0o400)
+        secret = volumes["bestnathan-tls"]["secret"]
+        self.assertEqual(secret["secretName"], "bestnathan-top-tls")
+        self.assertTrue(secret["optional"])
+        self.assertEqual(secret["defaultMode"], 0o400)
+        self.assertEqual(volumes["certs-active"]["emptyDir"]["medium"], "Memory")
         self.assertEqual(volumes["nginx-run"], {"name": "nginx-run", "emptyDir": {}})
         self.assertEqual(
-            volumes["reloader-script"]["configMap"]["name"],
-            "nginx-reloader-script",
+            volumes["reloader-script"]["configMap"]["name"], "nginx-reloader-script"
         )
 
+        script = yaml.safe_load(
+            (root / "nginx-proxy/configmap-reloader.yaml").read_text()
+        )["data"]["cert-reloader.sh"]
+        expected_checksum = hashlib.sha256(script.encode()).hexdigest()
+        annotations = daemonset["spec"]["template"]["metadata"]["annotations"]
+        self.assertEqual(annotations["checksum/slb-reloader"], expected_checksum)
+
         sites = (root / "nginx-proxy/configmap-sites.yaml").read_text()
-        self.assertIn("/etc/nginx/certs-managed/bestnathan/tls.crt", sites)
-        self.assertIn("/etc/nginx/certs-managed/bestnathan/tls.key", sites)
+        self.assertIn("/etc/nginx/certs-active/current/tls.crt", sites)
+        self.assertIn("/etc/nginx/certs-active/current/tls.key", sites)
         self.assertIn("/etc/nginx/certs/nhome.crt", sites)
         self.assertIn("/etc/nginx/certs/nhome.key", sites)
         self.assertIn("/etc/nginx/certs/default.crt", sites)
         self.assertIn("/etc/nginx/certs/default.key", sites)
+        self.assertNotIn("/etc/nginx/certs-managed/bestnathan", sites)
         self.assertNotIn("/etc/nginx/certs/bestnathan.crt", sites)
         self.assertNotIn("/etc/nginx/certs/bestnathan.key", sites)
 

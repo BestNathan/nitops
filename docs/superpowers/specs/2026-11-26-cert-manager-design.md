@@ -207,26 +207,28 @@ components/observability/prometheus/
 
 ### 挂载
 
-- `bestnathan-top-tls` 以只读目录挂载，例如 `/etc/nginx/certs-managed/bestnathan/`。
-- 不使用 `subPath`，保证 kubelet 能原子更新 Secret projection。
-- `bestnathan` server block 引用该目录下的 `tls.crt/tls.key`。
+- `bestnathan-top-tls` 以**只读、optional** 目录挂载到 `/etc/nginx/certs-managed/bestnathan/`，仅作为候选来源；nginx 不直接读取该 live Secret 路径。optional 避免冷启动时 SLB 与 cert-manager 互相等待。
+- 共享内存 `emptyDir`（`medium: Memory`）挂载到两个容器的 `/etc/nginx/certs-active/`，保存不可变代次 `generations/<fingerprint>/tls.crt|key`、`current` 与 `previous` 符号链接，以及 `verified-fingerprint`。私钥不写入节点磁盘或 NFS。
+- `bestnathan` server block 引用 `/etc/nginx/certs-active/current/tls.crt|key`，即已验证的不可变代次，而非 live Secret。
+- 新 Pod 启动时若 `current` 不存在，nginx 包装脚本从保留的 NFS `bestnathan.crt|key` 复制出 `bootstrap-nfs` 代次作为回退，保证冷启动可服务；随后 sidecar 用真实 Secret 代次替换。
 - `nhome`、`default` 和现有 NFS volume 保持原路径。
 
 ### reload 容器
 
 - reload 容器复用主 nginx 镜像、ConfigMap、NFS 证书和 Secret 挂载，使 `nginx -t` 校验完整实际配置。
 - 与主容器共享进程命名空间和 PID 文件目录，使 `nginx -s reload` 能定位正在运行的 master。
-- 监视 Secret projection 的代次与文件内容变化，先等待连续两次读取稳定，再进行操作。
-- 在 `nginx -t` 之前，使用候选文件验证 SAN、至少 24 小时有效期、完整链、系统公共信任链和公私钥匹配；任一失败均不得进入 nginx 测试或 reload。
-- 每次 `nginx -t` 和 `nginx -s reload` 都有超时；设置最小 reload 间隔，避免连续抖动。
-- reload 后以本节点真实 SNI 回读 leaf serial；serial 未变化时不能报告 reload 成功。
+- 指纹仅哈希证书与私钥**内容**（不含路径），保证 Secret 与代次目录可比。
+- 监视 Secret projection 变化，等待连续两次读取稳定后，将候选复制为新的不可变代次并复核内容指纹，再对该代次验证：SAN 精确为单一 `DNS:*.bestnathan.top`、至少 24 小时有效期、完整链、系统公共信任链和公私钥匹配。任一失败均不切换 `current`、不进入 nginx 测试或 reload。
+- 验证通过后保存 `previous`，原子切换 `current` 到新代次，再执行有界 `nginx -t` 与 `nginx -s reload`；设置最小 reload 间隔避免抖动。
+- reload 后以本节点真实 SNI 回读 leaf serial 并校验信任链；serial 未收敛即回滚。
+- reloader 脚本以整目录（无 `subPath`）挂载，并在 Pod template 写入脚本内容 checksum，确保脚本变更触发 DaemonSet 滚动。
 
 ### 失败策略
 
-- 文件不完整、证书/私钥不匹配或 `nginx -t` 失败时，不 reload、不自动重启 Pod。
-- 运行中的 nginx master/worker 保留旧配置和旧证书，以有界指数退避重试并产生告警。
-- 不删除或修改 cert-manager 拥有的 Secret。
-- 如果 Pod 在无效 Secret 存在时被外部重启，新进程必须无法通过配置校验并保持未 Ready，而不是跳过证书校验继续服务。
+- 文件不完整、SAN 不符、证书/私钥不匹配、链不受信或 `nginx -t`/reload/回读失败时，恢复 `previous` 代次并再次 reload，运行中的 nginx 保留最后一份有效证书；以有界指数退避重试并产生告警。
+- `verified-fingerprint` 持久化在共享 emptyDir，sidecar 重启后据此对账：候选与已验证代次不一致即重新执行完整切换，不会因从 Secret 读取指纹而跳过待处理的续期。
+- 不删除或修改 cert-manager 拥有的 Secret；仅保留 current 与 previous 两个代次，清理更旧副本。
+- 如果 Pod 在无效 Secret 存在时被外部重启，新进程从已验证 `current`（或 NFS 回退）启动，绝不直接加载被拒绝的 Secret。
 - 有效的受控续期通过 serial、reload 时间和路由探测共同证明，不能仅依赖 Secret 内容变化。
 
 ## 9. Router 受限同步与原子回滚

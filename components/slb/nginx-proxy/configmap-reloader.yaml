@@ -10,7 +10,7 @@ data:
     #!/bin/sh
     set -eu
     CERT_DIR=${CERT_DIR:-/etc/nginx/certs-managed/bestnathan}
-    RUN_DIR=${RUN_DIR:-/var/run/cert-reloader}
+    STATE_DIR=${STATE_DIR:-/etc/nginx/certs-active}
     PROBE_HOST=${PROBE_HOST:-argocd.bestnathan.top}
     OPENSSL_BIN=${OPENSSL_BIN:-openssl}
     CA_BUNDLE=${CA_BUNDLE:-/etc/ssl/certs/ca-certificates.crt}
@@ -18,32 +18,66 @@ data:
     RELOAD_MIN_INTERVAL=${RELOAD_MIN_INTERVAL:-30}
     VERIFY_ATTEMPTS=${VERIFY_ATTEMPTS:-6}
     VERIFY_DELAY=${VERIFY_DELAY:-5}
-    mkdir -p "$RUN_DIR"
-    LAST_FINGERPRINT=${LAST_FINGERPRINT:-}
+    GEN_DIR="$STATE_DIR/generations"
+    CURRENT="$STATE_DIR/current"
+    PREVIOUS="$STATE_DIR/previous"
+    VERIFIED_FILE="$STATE_DIR/verified-fingerprint"
+    RUN_DIR="$STATE_DIR/run"
+    mkdir -p "$GEN_DIR" "$RUN_DIR"
     LAST_RELOAD=${LAST_RELOAD:-0}
 
     fingerprint() {
       [ -s "$CERT_DIR/tls.crt" ] && [ -s "$CERT_DIR/tls.key" ] || return 1
-      sha256sum "$CERT_DIR/tls.crt" "$CERT_DIR/tls.key" | sha256sum | cut -d' ' -f1
+      cat "$CERT_DIR/tls.crt" "$CERT_DIR/tls.key" | sha256sum | cut -d' ' -f1
+    }
+
+    current_fingerprint() {
+      [ -s "$CURRENT/tls.crt" ] && [ -s "$CURRENT/tls.key" ] || return 1
+      cat "$CURRENT/tls.crt" "$CURRENT/tls.key" | sha256sum | cut -d' ' -f1
     }
 
     candidate_serial() {
-      "$OPENSSL_BIN" x509 -in "$CERT_DIR/tls.crt" -noout -serial | cut -d= -f2
+      "$OPENSSL_BIN" x509 -in "$1/tls.crt" -noout -serial | cut -d= -f2
+    }
+
+    materialize() {
+      fp=$1
+      gen="$GEN_DIR/$fp"
+      if [ ! -d "$gen" ]; then
+        mkdir -p "$gen"
+        cp "$CERT_DIR/tls.crt" "$gen/tls.crt"
+        cp "$CERT_DIR/tls.key" "$gen/tls.key"
+        chmod 644 "$gen/tls.crt"
+        chmod 600 "$gen/tls.key"
+      fi
+      printf '%s' "$gen"
     }
 
     validate_candidate() {
-      [ -s "$CERT_DIR/tls.crt" ] && [ -s "$CERT_DIR/tls.key" ] || return 1
-      certificate_count=$(grep -c 'BEGIN CERTIFICATE' "$CERT_DIR/tls.crt" || :)
+      gen=$1
+      crt="$gen/tls.crt"
+      key="$gen/tls.key"
+      [ -s "$crt" ] && [ -s "$key" ] || return 1
+      certificate_count=$(grep -c 'BEGIN CERTIFICATE' "$crt" || :)
       [ "$certificate_count" -ge 2 ] || {
         printf 'candidate fullchain is incomplete\n' >&2
         return 1
       }
-      if ! timeout 20 "$OPENSSL_BIN" x509 -in "$CERT_DIR/tls.crt" -noout \
-        -checkend 86400 -checkhost "$PROBE_HOST"; then
-        printf 'candidate SAN or validity window is invalid\n' >&2
+      ext=$("$OPENSSL_BIN" x509 -in "$crt" -noout -ext subjectAltName)
+      dns_count=$(printf '%s' "$ext" | grep -o 'DNS:' | wc -l | tr -d ' ')
+      [ "$dns_count" -eq 1 ] || {
+        printf 'candidate SAN must contain exactly one DNS entry\n' >&2
+        return 1
+      }
+      printf '%s' "$ext" | grep -q 'DNS:\*\.bestnathan\.top' || {
+        printf 'candidate SAN is not the *.bestnathan.top wildcard\n' >&2
+        return 1
+      }
+      if ! timeout 20 "$OPENSSL_BIN" x509 -in "$crt" -noout -checkend 86400; then
+        printf 'candidate expires within 24 hours\n' >&2
         return 1
       fi
-      if ! timeout 20 "$OPENSSL_BIN" x509 -in "$CERT_DIR/tls.crt" -pubkey -noout \
+      if ! timeout 20 "$OPENSSL_BIN" x509 -in "$crt" -pubkey -noout \
         > "$RUN_DIR/candidate-public.pem"; then
         return 1
       fi
@@ -52,7 +86,7 @@ data:
         -out "$RUN_DIR/candidate-public.der"; then
         return 1
       fi
-      if ! timeout 20 "$OPENSSL_BIN" pkey -in "$CERT_DIR/tls.key" \
+      if ! timeout 20 "$OPENSSL_BIN" pkey -in "$key" \
         -pubout -outform DER -out "$RUN_DIR/candidate-key-public.der"; then
         printf 'candidate private key is invalid\n' >&2
         return 1
@@ -64,7 +98,7 @@ data:
         return 1
       }
       if ! timeout 20 "$OPENSSL_BIN" verify -CAfile "$CA_BUNDLE" \
-        -untrusted "$CERT_DIR/tls.crt" "$CERT_DIR/tls.crt" \
+        -untrusted "$crt" "$crt" \
         > "$RUN_DIR/candidate-verify.out" 2> "$RUN_DIR/candidate-verify.err"; then
         printf 'candidate chain is not publicly trusted\n' >&2
         return 1
@@ -81,7 +115,6 @@ data:
           </dev/null >"$RUN_DIR/peer.pem" 2>"$RUN_DIR/peer.err"; then
           if actual=$("$OPENSSL_BIN" x509 -in "$RUN_DIR/peer.pem" -noout -serial | cut -d= -f2); then
             if [ "$actual" = "$expected" ]; then
-              printf 'verified served serial=%s\n' "$actual"
               return 0
             fi
           fi
@@ -92,38 +125,74 @@ data:
       return 1
     }
 
+    rollback() {
+      if [ -e "$PREVIOUS" ]; then
+        ln -sfn "$(readlink "$PREVIOUS")" "$CURRENT"
+        timeout 20 nginx -s reload || :
+        printf 'rolled back to previous generation\n' >&2
+      fi
+    }
+
+    prune_generations() {
+      keep_cur=$(readlink "$CURRENT" 2>/dev/null || :)
+      keep_prev=$(readlink "$PREVIOUS" 2>/dev/null || :)
+      for d in "$GEN_DIR"/*; do
+        [ -d "$d" ] || continue
+        rel="generations/$(basename "$d")"
+        [ "$rel" = "$keep_cur" ] && continue
+        [ "$rel" = "$keep_prev" ] && continue
+        rm -rf "$d"
+      done
+    }
+
     run_once() {
-      current=$(fingerprint) || return 1
-      [ "$current" != "$LAST_FINGERPRINT" ] || return 0
+      cand=$(fingerprint) || return 0
+      cur=$(current_fingerprint 2>/dev/null || :)
+      verified=$(cat "$VERIFIED_FILE" 2>/dev/null || :)
+      if [ "$cand" = "$cur" ] && [ "$cand" = "$verified" ]; then return 0; fi
       sleep "$RELOADER_SETTLE_SECONDS"
       confirmed=$(fingerprint) || return 1
-      [ "$confirmed" = "$current" ] || return 1
-      validate_candidate || return 1
-      expected=$(candidate_serial) || return 1
+      [ "$confirmed" = "$cand" ] || return 1
+      gen=$(materialize "$cand") || return 1
+      genfp=$(cat "$gen/tls.crt" "$gen/tls.key" | sha256sum | cut -d' ' -f1)
+      if [ "$genfp" != "$cand" ]; then rm -rf "$gen"; return 1; fi
+      if ! validate_candidate "$gen"; then rm -rf "$gen"; return 1; fi
+      expected=$(candidate_serial "$gen") || { rm -rf "$gen"; return 1; }
       now=$(date +%s)
       elapsed=$((now - LAST_RELOAD))
       if [ "$elapsed" -lt "$RELOAD_MIN_INTERVAL" ]; then
         sleep $((RELOAD_MIN_INTERVAL - elapsed))
       fi
+      if [ -e "$CURRENT" ]; then
+        ln -sfn "$(readlink "$CURRENT")" "$PREVIOUS"
+      fi
+      ln -sfn "generations/$cand" "$CURRENT"
       if ! timeout 20 nginx -t; then
-        printf 'nginx config test failed; retaining active configuration\n' >&2
+        printf 'nginx config test failed; rolling back\n' >&2
+        rollback
+        rm -rf "$gen"
         return 1
       fi
       if ! timeout 20 nginx -s reload; then
-        printf 'nginx reload failed; not advancing certificate generation\n' >&2
+        printf 'nginx reload failed; rolling back\n' >&2
+        rollback
+        rm -rf "$gen"
         return 1
       fi
       if ! verify_served "$expected"; then
-        printf 'served certificate did not converge to expected serial\n' >&2
+        printf 'served certificate did not converge; rolling back\n' >&2
+        rollback
+        rm -rf "$gen"
         return 1
       fi
-      LAST_FINGERPRINT=$current
+      printf '%s' "$cand" > "$VERIFIED_FILE"
       LAST_RELOAD=$(date +%s)
+      prune_generations
+      printf 'verified served serial=%s\n' "$expected"
       return 0
     }
 
     main() {
-      LAST_FINGERPRINT=$(fingerprint)
       delay=10
       while true; do
         if run_once; then
