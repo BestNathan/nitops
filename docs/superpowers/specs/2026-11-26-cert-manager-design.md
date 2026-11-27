@@ -145,9 +145,10 @@ components/observability/prometheus/
 ### CRD 与同步顺序
 
 - 现有 CRD 采用原位升级，禁止删除 CRD 后重建。
-- CRD 添加 ArgoCD `Prune=false`、`Delete=false` 保护，并在卸载手册中明确禁止级联删除 CRD。
+- CRD 和 `cert-manager` Namespace 都添加 ArgoCD `Prune=false`、`Delete=false` 保护，并在卸载手册中明确禁止级联删除 CRD 或 Namespace。
 - 使用 Server-Side Apply 避免大型 CRD annotation 超限。
-- sync wave 顺序为：CRD/Namespace → controller/webhook/cainjector/RBAC → Issuer/SealedSecret → Certificate。
+- sync wave 顺序为：CRD → Namespace → controller/cainjector/webhook Deployment/Service/RBAC → Issuer/SealedSecret → Certificate → fail-closed Validating/MutatingWebhookConfiguration。冷启动时，所有 bootstrap 自定义资源先于空 CA 的 admission 配置创建，避免 CREATE 被拒绝。
+- ArgoCD 对两种 webhook configuration 忽略 cainjector 派生的 `clientConfig.caBundle`，防止自动同步清空 CA；合并后必须等待全部 CA 注入，并通过 Certificate server dry-run 证明 admission 可达。
 - 即使 ArgoCD 已显示 Synced，也必须通过 Kubernetes readiness/condition 回读，不能以 Application 状态替代组件健康检查。
 - SLB/Router 的消费变更分成后续提交，确保证书 Ready 之前没有消费者开始挂载或切换。
 

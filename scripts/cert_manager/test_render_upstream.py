@@ -19,7 +19,7 @@ class RenderTests(unittest.TestCase):
         annotations = transformed["metadata"]["annotations"]
         self.assertEqual(annotations["argocd.argoproj.io/sync-wave"], "-20")
         self.assertEqual(
-            annotations["argocd.argoproj.io/sync-options"],
+            annotations.get("argocd.argoproj.io/sync-options"),
             "Prune=false,Delete=false",
         )
 
@@ -49,6 +49,33 @@ class RenderTests(unittest.TestCase):
         env = {item["name"]: item.get("value") for item in container["env"]}
         self.assertEqual(env["HTTPS_PROXY"], "http://192.168.2.98:7895")
         self.assertIn(".svc", env["NO_PROXY"])
+
+    def test_namespace_is_protected_from_prune_and_delete(self):
+        namespace = {
+            "apiVersion": "v1",
+            "kind": "Namespace",
+            "metadata": {"name": "cert-manager"},
+        }
+        transformed = transform(namespace)
+        annotations = transformed["metadata"]["annotations"]
+        self.assertEqual(annotations["argocd.argoproj.io/sync-wave"], "-10")
+        self.assertEqual(
+            annotations.get("argocd.argoproj.io/sync-options"),
+            "Prune=false,Delete=false",
+        )
+
+    def test_fail_closed_webhooks_follow_bootstrap_custom_resources(self):
+        for kind in ["ValidatingWebhookConfiguration", "MutatingWebhookConfiguration"]:
+            with self.subTest(kind=kind):
+                document = transform({
+                    "apiVersion": "admissionregistration.k8s.io/v1",
+                    "kind": kind,
+                    "metadata": {"name": "cert-manager-webhook"},
+                })
+                self.assertEqual(
+                    document["metadata"]["annotations"]["argocd.argoproj.io/sync-wave"],
+                    "30",
+                )
 
     def test_one_resource_per_file(self):
         docs = [

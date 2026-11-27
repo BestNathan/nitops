@@ -22,6 +22,39 @@ class ManifestContracts(unittest.TestCase):
         self.assertEqual(app["spec"]["source"]["targetRevision"], "main")
         self.assertTrue(app["spec"]["source"]["directory"]["recurse"])
         self.assertIn("ServerSideApply=true", app["spec"]["syncPolicy"]["syncOptions"])
+        ignored = {
+            item["kind"]: item
+            for item in app["spec"].get("ignoreDifferences", [])
+        }
+        for kind in ["ValidatingWebhookConfiguration", "MutatingWebhookConfiguration"]:
+            self.assertIn(kind, ignored)
+            self.assertEqual(ignored[kind]["group"], "admissionregistration.k8s.io")
+            self.assertEqual(ignored[kind]["name"], "cert-manager-webhook")
+            self.assertIn(
+                "/webhooks/*/clientConfig/caBundle",
+                ignored[kind]["jsonPointers"],
+            )
+
+    def test_bootstrap_resources_precede_fail_closed_admission(self):
+        webhooks = docs("components/cert-manager/controller/*webhookconfiguration*.yaml")
+        self.assertEqual(len(webhooks), 2)
+        for webhook in webhooks:
+            self.assertEqual(
+                webhook["metadata"]["annotations"]["argocd.argoproj.io/sync-wave"],
+                "30",
+            )
+            self.assertTrue(webhook["webhooks"])
+            for rule in webhook["webhooks"]:
+                self.assertEqual(rule["failurePolicy"], "Fail")
+        bootstrap = (
+            docs("components/cert-manager/issuers/*.yaml")
+            + docs("components/cert-manager/secrets/*.yaml")
+            + docs("components/cert-manager/certificates/*.yaml")
+        )
+        self.assertTrue(bootstrap)
+        for resource in bootstrap:
+            wave = int(resource["metadata"]["annotations"]["argocd.argoproj.io/sync-wave"])
+            self.assertLess(wave, 30)
 
     def test_issuers_and_certificate(self):
         issuers = docs("components/cert-manager/issuers/*.yaml")

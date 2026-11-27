@@ -27,6 +27,12 @@ def transform(document):
         annotations["argocd.argoproj.io/sync-options"] = "Prune=false,Delete=false"
     elif document["kind"] == "Namespace":
         annotations["argocd.argoproj.io/sync-wave"] = "-10"
+        annotations["argocd.argoproj.io/sync-options"] = "Prune=false,Delete=false"
+    elif document["kind"] in {
+        "ValidatingWebhookConfiguration",
+        "MutatingWebhookConfiguration",
+    }:
+        annotations["argocd.argoproj.io/sync-wave"] = "30"
 
     if document["kind"] != "Deployment":
         return document

@@ -211,10 +211,10 @@ Expected: a non-empty name/type inventory with no record content, credentials, o
 - [ ] **Step 5: Verify amd64 egress and public recursive DNS before installing**
 
 ```bash
-ssh root@192.168.2.86 'curl -fsS --max-time 20 --proxy http://192.168.2.98:7895 https://acme-staging-v02.api.letsencrypt.org/directory >/dev/null; curl -fsS --max-time 20 --proxy http://192.168.2.98:7895 https://www.cloudflare.com/ips-v4 >/dev/null; dig @1.1.1.1 bestnathan.top NS +time=5 +tries=1 +noall +answer +comments; dig @8.8.8.8 bestnathan.top NS +time=5 +tries=1 +noall +answer +comments'
+ssh root@192.168.2.86 'curl -fsS --max-time 20 --proxy http://192.168.2.98:7895 https://acme-staging-v02.api.letsencrypt.org/directory >/dev/null; curl -fsS --max-time 20 --proxy http://192.168.2.98:7895 https://www.cloudflare.com/ips-v4 >/dev/null; curl -fsS --max-time 20 --proxy http://192.168.2.98:7895 https://api.cloudflare.com/client/v4/ips >/dev/null; dig @1.1.1.1 bestnathan.top NS +time=5 +tries=1 +noall +answer +comments; dig @8.8.8.8 bestnathan.top NS +time=5 +tries=1 +noall +answer +comments'
 ```
 
-Expected: both HTTPS requests succeed and both public resolvers return `NOERROR` with the Cloudflare nameservers. Any failure stops PR-1 before ArgoCD sync.
+Expected: all three HTTPS requests succeed, including the real `api.cloudflare.com` DNS-01 API host, and both public resolvers return `NOERROR` with the Cloudflare nameservers. Any failure stops PR-1 before ArgoCD sync.
 
 ### Task 1: Reproducible upstream renderer
 
@@ -279,6 +279,33 @@ class RenderTests(unittest.TestCase):
         self.assertEqual(env["HTTPS_PROXY"], "http://192.168.2.98:7895")
         self.assertIn(".svc", env["NO_PROXY"])
 
+    def test_namespace_is_protected_from_prune_and_delete(self):
+        namespace = {
+            "apiVersion": "v1",
+            "kind": "Namespace",
+            "metadata": {"name": "cert-manager"},
+        }
+        transformed = transform(namespace)
+        annotations = transformed["metadata"]["annotations"]
+        self.assertEqual(annotations["argocd.argoproj.io/sync-wave"], "-10")
+        self.assertEqual(
+            annotations.get("argocd.argoproj.io/sync-options"),
+            "Prune=false,Delete=false",
+        )
+
+    def test_fail_closed_webhooks_follow_bootstrap_custom_resources(self):
+        for kind in ["ValidatingWebhookConfiguration", "MutatingWebhookConfiguration"]:
+            with self.subTest(kind=kind):
+                document = transform({
+                    "apiVersion": "admissionregistration.k8s.io/v1",
+                    "kind": kind,
+                    "metadata": {"name": "cert-manager-webhook"},
+                })
+                self.assertEqual(
+                    document["metadata"]["annotations"]["argocd.argoproj.io/sync-wave"],
+                    "30",
+                )
+
     def test_one_resource_per_file(self):
         docs = [
             {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "cert-manager"}},
@@ -336,6 +363,12 @@ def transform(document):
         annotations["argocd.argoproj.io/sync-options"] = "Prune=false,Delete=false"
     elif document["kind"] == "Namespace":
         annotations["argocd.argoproj.io/sync-wave"] = "-10"
+        annotations["argocd.argoproj.io/sync-options"] = "Prune=false,Delete=false"
+    elif document["kind"] in {
+        "ValidatingWebhookConfiguration",
+        "MutatingWebhookConfiguration",
+    }:
+        annotations["argocd.argoproj.io/sync-wave"] = "30"
 
     if document["kind"] != "Deployment":
         return document
@@ -409,7 +442,7 @@ if __name__ == "__main__":
 
 Run: `python3 -m unittest discover -s scripts/cert_manager -p 'test_render_upstream.py' -v`
 
-Expected: `Ran 2 tests ... OK`.
+Expected: `Ran 4 tests ... OK`.
 
 - [ ] **Step 5: Download to a new empty directory, verify, and render**
 
@@ -471,6 +504,39 @@ class ManifestContracts(unittest.TestCase):
         app = yaml.safe_load((ROOT / "apps/cert-manager.yaml").read_text())
         self.assertTrue(app["spec"]["source"]["directory"]["recurse"])
         self.assertIn("ServerSideApply=true", app["spec"]["syncPolicy"]["syncOptions"])
+        ignored = {
+            item["kind"]: item
+            for item in app["spec"].get("ignoreDifferences", [])
+        }
+        for kind in ["ValidatingWebhookConfiguration", "MutatingWebhookConfiguration"]:
+            self.assertIn(kind, ignored)
+            self.assertEqual(ignored[kind]["group"], "admissionregistration.k8s.io")
+            self.assertEqual(ignored[kind]["name"], "cert-manager-webhook")
+            self.assertIn(
+                "/webhooks/*/clientConfig/caBundle",
+                ignored[kind]["jsonPointers"],
+            )
+
+    def test_bootstrap_resources_precede_fail_closed_admission(self):
+        webhooks = docs("components/cert-manager/controller/*webhookconfiguration*.yaml")
+        self.assertEqual(len(webhooks), 2)
+        for webhook in webhooks:
+            self.assertEqual(
+                webhook["metadata"]["annotations"]["argocd.argoproj.io/sync-wave"],
+                "30",
+            )
+            self.assertTrue(webhook["webhooks"])
+            for rule in webhook["webhooks"]:
+                self.assertEqual(rule["failurePolicy"], "Fail")
+        bootstrap = (
+            docs("components/cert-manager/issuers/*.yaml")
+            + docs("components/cert-manager/secrets/*.yaml")
+            + docs("components/cert-manager/certificates/*.yaml")
+        )
+        self.assertTrue(bootstrap)
+        for resource in bootstrap:
+            wave = int(resource["metadata"]["annotations"]["argocd.argoproj.io/sync-wave"])
+            self.assertLess(wave, 30)
 
     def test_issuers_and_certificate(self):
         issuers = docs("components/cert-manager/issuers/*.yaml")
@@ -534,6 +600,17 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: cert-manager-webhook
+      jsonPointers:
+        - /webhooks/*/clientConfig/caBundle
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      name: cert-manager-webhook
+      jsonPointers:
+        - /webhooks/*/clientConfig/caBundle
   syncPolicy:
     automated:
       prune: true
@@ -676,9 +753,29 @@ kubectl wait --for=condition=Established crd/certificates.cert-manager.io --time
 kubectl -n cert-manager rollout status deployment/cert-manager --timeout=5m
 kubectl -n cert-manager rollout status deployment/cert-manager-cainjector --timeout=5m
 kubectl -n cert-manager rollout status deployment/cert-manager-webhook --timeout=5m
+python3 -I - <<'PY'
+import base64,json,subprocess,time
+for _ in range(60):
+    ready=True
+    for kind in ['validatingwebhookconfiguration','mutatingwebhookconfiguration']:
+        document=json.loads(subprocess.run(
+            ['kubectl','get',kind,'cert-manager-webhook','-o','json'],
+            check=True,capture_output=True,text=True).stdout)
+        for webhook in document['webhooks']:
+            bundle=webhook['clientConfig'].get('caBundle','')
+            if not bundle or b'BEGIN CERTIFICATE' not in base64.b64decode(bundle):
+                ready=False
+    if ready:
+        break
+    time.sleep(2)
+else:
+    raise SystemExit('webhook CA injection did not converge')
+print('all webhook CA bundles injected')
+PY
+kubectl apply --dry-run=server -f components/cert-manager/certificates/certificate-bestnathan-staging-test.yaml >/dev/null
 ```
 
-Expected: Applications Synced/Healthy and all Deployments fully available. If ArgoCD is Healthy but a Deployment is not, the gate remains failed.
+Expected: Applications Synced/Healthy, all Deployments fully available, every webhook `caBundle` contains a certificate, and the apiserver accepts the Certificate server dry-run through the injected admission endpoints. If ArgoCD is Healthy but any readiness or admission check fails, the gate remains failed.
 
 - [ ] **Step 2: Remove only verified-unused legacy Issuers**
 
