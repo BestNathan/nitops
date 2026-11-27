@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: observability
+data:
+  cert-manager.yml: |
+    groups:
+      - name: cert-manager
+        rules:
+          - alert: CertManagerCertificateNotReady
+            expr: certmanager_certificate_ready_status{namespace="slb",name="bestnathan-wildcard",condition="True"} == 0
+            for: 5m
+            labels: {severity: critical}
+            annotations:
+              summary: Production wildcard Certificate is not Ready
+          - alert: CertManagerCertificateExpiring
+            expr: time() > certmanager_certificate_expiration_timestamp_seconds{namespace="slb",name="bestnathan-wildcard"} - 14 * 86400
+            for: 15m
+            labels: {severity: warning}
+            annotations:
+              summary: Managed wildcard certificate expires within 14 days
+          - alert: CertManagerCertificateMetricsAbsent
+            expr: absent(certmanager_certificate_expiration_timestamp_seconds{namespace="slb",name="bestnathan-wildcard"})
+            for: 5m
+            labels: {severity: critical}
+            annotations:
+              summary: Production Certificate metrics are absent
+          - alert: CertManagerScrapeDown
+            expr: up{job="cert-manager"} == 0
+            for: 5m
+            labels: {severity: critical}
+            annotations:
+              summary: Prometheus cannot scrape cert-manager
+          - alert: CertManagerSyncErrors
+            expr: increase(certmanager_controller_sync_error_count[15m]) > 0
+            for: 15m
+            labels: {severity: warning}
+            annotations:
+              summary: cert-manager controller synchronization errors continue

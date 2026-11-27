@@ -83,11 +83,13 @@ class ManifestContracts(unittest.TestCase):
 
         certificates = docs("components/cert-manager/certificates/*.yaml")
         self.assertEqual(len(certificates), 1)
-        staging = certificates[0]
-        self.assertEqual(staging["metadata"]["name"], "bestnathan-staging-test")
-        self.assertEqual(staging["spec"]["issuerRef"]["name"], "letsencrypt-staging")
-        self.assertEqual(staging["spec"]["dnsNames"], ["*.bestnathan.top"])
-        self.assertEqual(staging["spec"]["privateKey"]["rotationPolicy"], "Always")
+        production = certificates[0]
+        self.assertEqual(production["metadata"]["name"], "bestnathan-wildcard")
+        self.assertEqual(production["metadata"]["namespace"], "slb")
+        self.assertEqual(production["spec"]["secretName"], "bestnathan-top-tls")
+        self.assertEqual(production["spec"]["issuerRef"]["name"], "letsencrypt-production")
+        self.assertEqual(production["spec"]["dnsNames"], ["*.bestnathan.top"])
+        self.assertEqual(production["spec"]["privateKey"]["rotationPolicy"], "Always")
 
     def test_cloudflare_secret_is_strict_sealed_token(self):
         sealed = docs("components/cert-manager/secrets/*.yaml")
@@ -100,6 +102,50 @@ class ManifestContracts(unittest.TestCase):
         self.assertEqual(set(item["spec"]["encryptedData"]), {"token"})
         self.assertNotIn("data", item)
         self.assertNotIn("data", item["spec"].get("template", {}))
+
+    def test_cert_manager_monitoring_is_scoped_and_mounted(self):
+        root = ROOT / "components/observability/prometheus"
+        config_map = yaml.safe_load((root / "configmap.yaml").read_text())
+        prometheus = yaml.safe_load(config_map["data"]["prometheus.yml"])
+        self.assertEqual(
+            prometheus.get("rule_files"),
+            ["/etc/prometheus/rules/*.yml"],
+        )
+        jobs = {
+            job["job_name"]: job
+            for job in prometheus["scrape_configs"]
+        }
+        self.assertEqual(
+            jobs["cert-manager"]["static_configs"][0]["targets"],
+            ["cert-manager.cert-manager.svc:9402"],
+        )
+
+        deployment = yaml.safe_load((root / "deployment.yaml").read_text())
+        pod = deployment["spec"]["template"]["spec"]
+        container = next(item for item in pod["containers"] if item["name"] == "prometheus")
+        mounts = {item["name"]: item for item in container["volumeMounts"]}
+        self.assertEqual(mounts["rules"]["mountPath"], "/etc/prometheus/rules")
+        volumes = {item["name"]: item for item in pod["volumes"]}
+        self.assertEqual(volumes["rules"]["configMap"]["name"], "prometheus-rules")
+
+        rules_path = root / "configmap-rules.yaml"
+        self.assertTrue(rules_path.exists(), "cert-manager alert rules are missing")
+        rules_map = yaml.safe_load(rules_path.read_text())
+        rules_text = rules_map["data"]["cert-manager.yml"]
+        groups = yaml.safe_load(rules_text)["groups"]
+        alerts = {
+            rule["alert"]
+            for group in groups
+            for rule in group["rules"]
+        }
+        self.assertEqual(alerts, {
+            "CertManagerCertificateNotReady",
+            "CertManagerCertificateExpiring",
+            "CertManagerCertificateMetricsAbsent",
+            "CertManagerScrapeDown",
+            "CertManagerSyncErrors",
+        })
+        self.assertNotIn("blackbox", rules_text)
 
     def test_no_competing_secret_writer_or_private_ca(self):
         sealed = docs("components/cert-manager/secrets/*.yaml")
