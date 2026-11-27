@@ -173,7 +173,7 @@ components/observability/prometheus/
 - 不复用 Nession DNS 工作流凭据，不要求额外创建 CF 专用 ACME 凭据。
 - 新增 PR-0 受保护的 main-only `workflow_dispatch`：使用仓库中的 SealedSecrets **公开加密证书**在 GitHub Runner 内离线生成 SealedSecret，并输出仅含 DNS name/type 的基线。Artifact 保留 1 天；Token 仅注入密封和 DNS inventory 步骤，不进入 checkout、upload、日志、本机文件或 Git。签发后再次运行工作流取得新 DNS inventory，与基线比较。
 - Token 通过 PR-0 artifact 中的 SealedSecret 投递到 `cert-manager` Namespace，不在本机读取 GitHub Secret 原值。
-- ACME 联系邮箱由运维在 Staging 执行前通过受审核配置提供；未提供时不得启用对应 ClusterIssuer。
+- ACME 联系邮箱使用 nitops 仓库级 GitHub Actions Variable `ACME_EMAIL`，由脚本读取并写入 Staging/Production ClusterIssuer；Variable 缺失或格式无效时不得启用对应 ClusterIssuer。
 - Token、账户私钥、TLS 私钥不得出现在 Git 明文、日志、命令回显或验收证据中。
 
 ### DNS-01

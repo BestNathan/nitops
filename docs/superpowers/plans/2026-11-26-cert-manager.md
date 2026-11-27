@@ -485,11 +485,12 @@ class ManifestContracts(unittest.TestCase):
             self.assertEqual(solver["dns01"]["cloudflare"]["apiTokenSecretRef"], {
                 "name": "cloudflare-api-token", "key": "token"})
         certificates = docs("components/cert-manager/certificates/*.yaml")
-        production = [c for c in certificates if c["metadata"]["name"] == "bestnathan-wildcard"]
-        if production:
-            self.assertEqual(len(certificates), 1)
-            self.assertEqual(production[0]["spec"]["dnsNames"], ["*.bestnathan.top"])
-            self.assertEqual(production[0]["spec"]["privateKey"]["rotationPolicy"], "Always")
+        self.assertEqual(len(certificates), 1)
+        staging = certificates[0]
+        self.assertEqual(staging["metadata"]["name"], "bestnathan-staging-test")
+        self.assertEqual(staging["spec"]["issuerRef"]["name"], "letsencrypt-staging")
+        self.assertEqual(staging["spec"]["dnsNames"], ["*.bestnathan.top"])
+        self.assertEqual(staging["spec"]["privateKey"]["rotationPolicy"], "Always")
 
     def test_no_competing_secret_writer_or_private_ca(self):
         sealed = docs("components/cert-manager/secrets/*.yaml")
@@ -541,18 +542,20 @@ spec:
       - ServerSideApply=true
 ```
 
-- [ ] **Step 4: Generate both Issuers from an operator-supplied email**
+- [ ] **Step 4: Generate both Issuers from the reviewed GitHub ACME_EMAIL variable**
 
-Run `read -r ACME_EMAIL` and let the operator enter the approved ACME contact. Then run:
+Read the repository Actions Variable `ACME_EMAIL` without printing its value:
 
 ```bash
-export ACME_EMAIL
 python3 -I - <<'PY'
-import os
+import subprocess
 from pathlib import Path
 import yaml
 
-email = os.environ["ACME_EMAIL"]
+email = subprocess.run(
+    ["gh", "api", "repos/BestNathan/nitops/actions/variables/ACME_EMAIL", "--jq", ".value"],
+    check=True, capture_output=True, text=True,
+).stdout.strip()
 if "@" not in email or "\n" in email:
     raise SystemExit("invalid ACME email")
 root = Path("components/cert-manager/issuers")
@@ -581,8 +584,8 @@ for name, server in [
     }
     (root / f"clusterissuer-{name}.yaml").write_text(
         yaml.safe_dump(document, sort_keys=False, explicit_start=True))
+print("rendered 2 ClusterIssuers from repository ACME_EMAIL")
 PY
-unset ACME_EMAIL
 ```
 
 Expected: two files with the same reviewed email, distinct ACME servers/account keys, and no per-Issuer recursive-DNS field. The controller flags from Task 1 own public recursive DNS.
@@ -747,13 +750,28 @@ Expected: no added/changed business A, AAAA, or CNAME records. A still-present A
 **Files:**
 - Delete: `components/cert-manager/certificates/certificate-bestnathan-staging-test.yaml`
 - Create: `components/cert-manager/certificates/certificate-bestnathan-wildcard.yaml`
+- Modify: `scripts/cert_manager/test_manifests.py`
 - Modify: `components/observability/prometheus/configmap.yaml`
 - Modify: `components/observability/prometheus/deployment.yaml`
 - Create: `components/observability/prometheus/configmap-rules.yaml`
 
 - [ ] **Step 1: Replace Staging with the sole production Certificate**
 
-Delete the Staging manifest and add:
+First change the certificate block in `scripts/cert_manager/test_manifests.py` to the production expectation below and run `python3 scripts/cert_manager/test_manifests.py -v`; expected FAIL while the Staging Certificate remains:
+
+```python
+        certificates = docs("components/cert-manager/certificates/*.yaml")
+        self.assertEqual(len(certificates), 1)
+        production = certificates[0]
+        self.assertEqual(production["metadata"]["name"], "bestnathan-wildcard")
+        self.assertEqual(production["metadata"]["namespace"], "slb")
+        self.assertEqual(production["spec"]["secretName"], "bestnathan-top-tls")
+        self.assertEqual(production["spec"]["issuerRef"]["name"], "letsencrypt-production")
+        self.assertEqual(production["spec"]["dnsNames"], ["*.bestnathan.top"])
+        self.assertEqual(production["spec"]["privateKey"]["rotationPolicy"], "Always")
+```
+
+Then delete the Staging manifest and add:
 
 ```yaml
 # components/cert-manager/certificates/certificate-bestnathan-wildcard.yaml
