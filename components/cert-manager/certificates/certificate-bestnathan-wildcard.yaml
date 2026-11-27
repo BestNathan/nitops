@@ -1,14 +1,14 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: bestnathan-staging-test
-  namespace: cert-manager
+  name: bestnathan-wildcard
+  namespace: slb
   annotations:
     argocd.argoproj.io/sync-wave: "20"
 spec:
-  secretName: bestnathan-staging-test-tls
+  secretName: bestnathan-top-tls
   issuerRef:
-    name: letsencrypt-staging
+    name: letsencrypt-production
     kind: ClusterIssuer
     group: cert-manager.io
   dnsNames:
