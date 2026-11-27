@@ -145,9 +145,10 @@ components/observability/prometheus/
 ### CRD 与同步顺序
 
 - 现有 CRD 采用原位升级，禁止删除 CRD 后重建。
-- CRD 添加 ArgoCD `Prune=false`、`Delete=false` 保护，并在卸载手册中明确禁止级联删除 CRD。
+- CRD 和 `cert-manager` Namespace 都添加 ArgoCD `Prune=false`、`Delete=false` 保护，并在卸载手册中明确禁止级联删除 CRD 或 Namespace。
 - 使用 Server-Side Apply 避免大型 CRD annotation 超限。
-- sync wave 顺序为：CRD/Namespace → controller/webhook/cainjector/RBAC → Issuer/SealedSecret → Certificate。
+- sync wave 顺序为：CRD → Namespace → controller/cainjector/webhook Deployment/Service/RBAC → Issuer/SealedSecret → Certificate → fail-closed Validating/MutatingWebhookConfiguration。冷启动时，所有 bootstrap 自定义资源先于空 CA 的 admission 配置创建，避免 CREATE 被拒绝。
+- ArgoCD 对两种 webhook configuration 忽略 cainjector 派生的 `clientConfig.caBundle`，防止自动同步清空 CA；合并后必须等待全部 CA 注入，并通过 Certificate server dry-run 证明 admission 可达。
 - 即使 ArgoCD 已显示 Synced，也必须通过 Kubernetes readiness/condition 回读，不能以 Application 状态替代组件健康检查。
 - SLB/Router 的消费变更分成后续提交，确保证书 Ready 之前没有消费者开始挂载或切换。
 
@@ -173,7 +174,7 @@ components/observability/prometheus/
 - 不复用 Nession DNS 工作流凭据，不要求额外创建 CF 专用 ACME 凭据。
 - 新增 PR-0 受保护的 main-only `workflow_dispatch`：使用仓库中的 SealedSecrets **公开加密证书**在 GitHub Runner 内离线生成 SealedSecret，并输出仅含 DNS name/type 的基线。Artifact 保留 1 天；Token 仅注入密封和 DNS inventory 步骤，不进入 checkout、upload、日志、本机文件或 Git。签发后再次运行工作流取得新 DNS inventory，与基线比较。
 - Token 通过 PR-0 artifact 中的 SealedSecret 投递到 `cert-manager` Namespace，不在本机读取 GitHub Secret 原值。
-- ACME 联系邮箱由运维在 Staging 执行前通过受审核配置提供；未提供时不得启用对应 ClusterIssuer。
+- ACME 联系邮箱使用 nitops 仓库级 GitHub Actions Variable `ACME_EMAIL`，由脚本读取并写入 Staging/Production ClusterIssuer；Variable 缺失或格式无效时不得启用对应 ClusterIssuer。
 - Token、账户私钥、TLS 私钥不得出现在 Git 明文、日志、命令回显或验收证据中。
 
 ### DNS-01
