@@ -187,6 +187,47 @@ class ManifestContracts(unittest.TestCase):
         )
         self.assertLess(slb_wave, cert_wave)
 
+    def test_slb_secret_mount_and_reloader_preserve_legacy_certificates(self):
+        root = ROOT / "components/slb"
+        kustomization = yaml.safe_load((root / "kustomization.yaml").read_text())
+        self.assertIn("nginx-proxy/configmap-reloader.yaml", kustomization["resources"])
+        daemonset = yaml.safe_load((root / "nginx-proxy/daemonset.yaml").read_text())
+        pod = daemonset["spec"]["template"]["spec"]
+        self.assertTrue(pod["hostNetwork"])
+        self.assertTrue(pod["shareProcessNamespace"])
+        containers = {item["name"]: item for item in pod["containers"]}
+        self.assertEqual(set(containers), {"nginx", "cert-reloader"})
+        for container in containers.values():
+            self.assertEqual(
+                container["image"],
+                "docker.io/library/nginx@sha256:2f4e10193b0c4f61472245e9d26cea78e7df7af266c7e7cf5e67353ee2731b51",
+            )
+            mount = next(
+                item for item in container["volumeMounts"]
+                if item["name"] == "bestnathan-tls"
+            )
+            self.assertEqual(mount["mountPath"], "/etc/nginx/certs-managed/bestnathan")
+            self.assertTrue(mount["readOnly"])
+            self.assertNotIn("subPath", mount)
+        volumes = {item["name"]: item for item in pod["volumes"]}
+        self.assertEqual(volumes["bestnathan-tls"]["secret"]["secretName"], "bestnathan-top-tls")
+        self.assertEqual(volumes["bestnathan-tls"]["secret"]["defaultMode"], 0o400)
+        self.assertEqual(volumes["nginx-run"], {"name": "nginx-run", "emptyDir": {}})
+        self.assertEqual(
+            volumes["reloader-script"]["configMap"]["name"],
+            "nginx-reloader-script",
+        )
+
+        sites = (root / "nginx-proxy/configmap-sites.yaml").read_text()
+        self.assertIn("/etc/nginx/certs-managed/bestnathan/tls.crt", sites)
+        self.assertIn("/etc/nginx/certs-managed/bestnathan/tls.key", sites)
+        self.assertIn("/etc/nginx/certs/nhome.crt", sites)
+        self.assertIn("/etc/nginx/certs/nhome.key", sites)
+        self.assertIn("/etc/nginx/certs/default.crt", sites)
+        self.assertIn("/etc/nginx/certs/default.key", sites)
+        self.assertNotIn("/etc/nginx/certs/bestnathan.crt", sites)
+        self.assertNotIn("/etc/nginx/certs/bestnathan.key", sites)
+
     def test_no_competing_secret_writer_or_private_ca(self):
         sealed = docs("components/cert-manager/secrets/*.yaml")
         for item in sealed:

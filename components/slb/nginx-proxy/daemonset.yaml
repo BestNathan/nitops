@@ -16,13 +16,14 @@ spec:
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      shareProcessNamespace: true
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
           effect: NoSchedule
       containers:
         - name: nginx
-          image: nginx:alpine
+          image: docker.io/library/nginx@sha256:2f4e10193b0c4f61472245e9d26cea78e7df7af266c7e7cf5e67353ee2731b51
           command:
             - sh
             - -c
@@ -59,6 +60,35 @@ spec:
               mountPath: /etc/nginx/certs
               subPath: slb/nginx-conf/certs
               readOnly: true
+            - name: bestnathan-tls
+              mountPath: /etc/nginx/certs-managed/bestnathan
+              readOnly: true
+            - name: nginx-run
+              mountPath: /var/run
+        - name: cert-reloader
+          image: docker.io/library/nginx@sha256:2f4e10193b0c4f61472245e9d26cea78e7df7af266c7e7cf5e67353ee2731b51
+          command: ["/bin/sh", "/usr/local/bin/cert-reloader.sh"]
+          env:
+            - name: PROBE_HOST
+              value: argocd.bestnathan.top
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: nginx-sites
+              mountPath: /etc/nginx/conf.d
+            - name: nfs-root
+              mountPath: /etc/nginx/certs
+              subPath: slb/nginx-conf/certs
+              readOnly: true
+            - name: bestnathan-tls
+              mountPath: /etc/nginx/certs-managed/bestnathan
+              readOnly: true
+            - name: nginx-run
+              mountPath: /var/run
+            - name: reloader-script
+              mountPath: /usr/local/bin/cert-reloader.sh
+              subPath: cert-reloader.sh
       volumes:
         - name: nginx-conf
           configMap:
@@ -69,3 +99,13 @@ spec:
         - name: nfs-root
           persistentVolumeClaim:
             claimName: slb-nfs
+        - name: bestnathan-tls
+          secret:
+            secretName: bestnathan-top-tls
+            defaultMode: 0400
+        - name: nginx-run
+          emptyDir: {}
+        - name: reloader-script
+          configMap:
+            name: nginx-reloader-script
+            defaultMode: 0555

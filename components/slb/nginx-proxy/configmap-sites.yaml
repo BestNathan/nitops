@@ -53,8 +53,8 @@ data:
       listen 443 ssl;
       server_name *.bestnathan.top;
 
-      ssl_certificate     /etc/nginx/certs/bestnathan.crt;
-      ssl_certificate_key /etc/nginx/certs/bestnathan.key;
+      ssl_certificate     /etc/nginx/certs-managed/bestnathan/tls.crt;
+      ssl_certificate_key /etc/nginx/certs-managed/bestnathan/tls.key;
       ssl_protocols       TLSv1.2 TLSv1.3;
       ssl_ciphers         HIGH:!aNULL:!MD5;
 

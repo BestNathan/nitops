@@ -217,6 +217,7 @@ components/observability/prometheus/
 - reload 容器复用主 nginx 镜像、ConfigMap、NFS 证书和 Secret 挂载，使 `nginx -t` 校验完整实际配置。
 - 与主容器共享进程命名空间和 PID 文件目录，使 `nginx -s reload` 能定位正在运行的 master。
 - 监视 Secret projection 的代次与文件内容变化，先等待连续两次读取稳定，再进行操作。
+- 在 `nginx -t` 之前，使用候选文件验证 SAN、至少 24 小时有效期、完整链、系统公共信任链和公私钥匹配；任一失败均不得进入 nginx 测试或 reload。
 - 每次 `nginx -t` 和 `nginx -s reload` 都有超时；设置最小 reload 间隔，避免连续抖动。
 - reload 后以本节点真实 SNI 回读 leaf serial；serial 未变化时不能报告 reload 成功。
 
