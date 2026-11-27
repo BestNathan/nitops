@@ -1,0 +1,9 @@
+[Unit]
+Description=Validate and synchronize cert-manager wildcard to Router
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/root/nitops-cert-sync/env
+ExecStart=/usr/local/sbin/nitops-cert-sync --check

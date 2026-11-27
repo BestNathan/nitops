@@ -301,6 +301,20 @@ class ManifestContracts(unittest.TestCase):
         }
         self.assertEqual(lan_rules, {"LanSlbTlsProbeFailed", "LanSlbCertificateExpiring"})
 
+    def test_router_rbac_is_name_restricted_get_only(self):
+        root = ROOT / "components/cert-manager/router-rbac"
+        role = yaml.safe_load((root / "role.yaml").read_text())
+        self.assertEqual(role["metadata"]["namespace"], "slb")
+        self.assertEqual(len(role["rules"]), 1)
+        rule = role["rules"][0]
+        self.assertEqual(rule["resources"], ["secrets"])
+        self.assertEqual(rule["resourceNames"], ["bestnathan-top-tls"])
+        self.assertEqual(rule["verbs"], ["get"])
+        binding = yaml.safe_load((root / "rolebinding.yaml").read_text())
+        self.assertEqual(binding["roleRef"]["name"], "router-cert-reader")
+        self.assertEqual(binding["subjects"][0]["name"], "router-cert-reader")
+        self.assertEqual(binding["subjects"][0]["namespace"], "slb")
+
     def test_no_competing_secret_writer_or_private_ca(self):
         sealed = docs("components/cert-manager/secrets/*.yaml")
         for item in sealed:
