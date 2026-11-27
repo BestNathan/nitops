@@ -66,3 +66,20 @@ data:
       - job_name: "cert-manager"
         static_configs:
           - targets: ["cert-manager.cert-manager.svc:9402"]
+      - job_name: "blackbox-lan-slb"
+        metrics_path: /probe
+        params:
+          module: [lan_slb_https]
+        static_configs:
+          - targets:
+              - https://192.168.2.162/
+              - https://192.168.2.86/
+              - https://192.168.2.232/
+              - https://192.168.2.224/
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter.observability.svc:9115

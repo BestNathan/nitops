@@ -38,3 +38,17 @@ data:
             labels: {severity: warning}
             annotations:
               summary: cert-manager controller synchronization errors continue
+      - name: edge-tls-lan
+        rules:
+          - alert: LanSlbTlsProbeFailed
+            expr: probe_success{job="blackbox-lan-slb"} == 0
+            for: 2m
+            labels: {severity: critical}
+            annotations:
+              summary: LAN SLB HTTPS probe fails with normal trust verification
+          - alert: LanSlbCertificateExpiring
+            expr: (probe_ssl_earliest_cert_expiry{job="blackbox-lan-slb"} > 0) and (time() > probe_ssl_earliest_cert_expiry{job="blackbox-lan-slb"} - 14 * 86400)
+            for: 15m
+            labels: {severity: warning}
+            annotations:
+              summary: Actually served LAN certificate expires within 14 days

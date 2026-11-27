@@ -17,7 +17,7 @@ spec:
       labels:
         app: prometheus
       annotations:
-        checksum/prometheus-config: "7a9162c3c589470e319b1783d8873bbfd08d9daeefbe85771d2837dc73c22101"
+        checksum/prometheus-config: "9b50fba5d9d5bc32d0b15b347036d914eef8208edd3c8d66ad8da9ede14ee7c7"
     spec:
       serviceAccountName: prometheus
       containers:

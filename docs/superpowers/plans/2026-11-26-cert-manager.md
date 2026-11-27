@@ -1489,7 +1489,7 @@ Add to `groups` in `configmap-rules.yaml`:
             annotations:
               summary: LAN SLB HTTPS probe fails with normal trust verification
           - alert: LanSlbCertificateExpiring
-            expr: time() > probe_ssl_earliest_cert_expiry{job="blackbox-lan-slb"} - 14 * 86400
+            expr: (probe_ssl_earliest_cert_expiry{job="blackbox-lan-slb"} > 0) and (time() > probe_ssl_earliest_cert_expiry{job="blackbox-lan-slb"} - 14 * 86400)
             for: 15m
             labels: {severity: warning}
             annotations:
