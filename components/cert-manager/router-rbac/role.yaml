@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: router-cert-reader
+  namespace: slb
+  annotations: {argocd.argoproj.io/sync-wave: "0"}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["bestnathan-top-tls"]
+    verbs: ["get"]
