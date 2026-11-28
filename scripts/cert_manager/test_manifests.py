@@ -315,6 +315,16 @@ class ManifestContracts(unittest.TestCase):
         self.assertEqual(binding["subjects"][0]["name"], "router-cert-reader")
         self.assertEqual(binding["subjects"][0]["namespace"], "slb")
 
+    def test_slb_public_upstream_uses_higress_tls(self):
+        sites = (ROOT / "components/slb/nginx-proxy/configmap-sites.yaml").read_text()
+        self.assertIn(
+            "proxy_pass https://higress-gateway.higress-system.svc.cluster.local:443;",
+            sites,
+        )
+        self.assertIn("proxy_ssl_server_name on;", sites)
+        self.assertIn("proxy_ssl_name $host;", sites)
+        self.assertIn("proxy_set_header X-Forwarded-Proto https;", sites)
+
     def test_no_competing_secret_writer_or_private_ca(self):
         sealed = docs("components/cert-manager/secrets/*.yaml")
         for item in sealed:

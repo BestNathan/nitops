@@ -59,7 +59,15 @@ data:
       ssl_ciphers         HIGH:!aNULL:!MD5;
 
       location / {
-        proxy_pass http://higress-gateway.higress-system.svc.cluster.local:80;
+        # Higress ignores X-Forwarded-Proto (use_remote_address, zero trusted hops),
+        # so a plaintext :80 hop makes it treat TLS-terminated LAN requests as http
+        # and ssl-redirect loops. Proxy to the gateway's TLS port so Envoy sees the
+        # scheme natively as https. External client→SLB TLS is unchanged.
+        proxy_pass https://higress-gateway.higress-system.svc.cluster.local:443;
+        proxy_ssl_server_name on;
+        proxy_ssl_name $host;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+        proxy_ssl_verify off;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
