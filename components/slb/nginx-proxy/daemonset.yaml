@@ -15,12 +15,6 @@ spec:
         app: nginx-proxy
       annotations:
         checksum/slb-reloader: "a485684901ed2dab1a14e9edee32f7a01e669bc495094d5aaffef889882bc9d1"
-        # Rolls the DaemonSet when the served site configuration changes: nginx
-        # does not reload on a mounted ConfigMap edit by itself, and the
-        # cert-reloader only reloads on certificate rotation.
-        # sha256 of components/slb/nginx-proxy/configmap-sites.yaml —
-        # tests/slb/test-sites-contract.sh fails when these drift apart.
-        checksum/nginx-sites: "5f9cee6dffecd0162c2bbc4d2397d8b53129b95ef16687ce2533d9d7b60e545d"
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
